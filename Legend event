@@ -1,0 +1,540 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LegendEvent"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local currentTheme = "light"
+local themeColors = {
+    light = {
+        mainBg = Color3.fromRGB(245, 245, 255),
+        mainGradientStart = Color3.fromRGB(255, 255, 255),
+        mainGradientEnd = Color3.fromRGB(230, 230, 245),
+        textPrimary = Color3.fromRGB(40, 40, 60),
+        textSecondary = Color3.fromRGB(80, 80, 100),
+        buttonBg = Color3.fromRGB(255, 255, 255),
+        buttonGradientStart = Color3.fromRGB(255, 255, 255),
+        buttonGradientEnd = Color3.fromRGB(240, 240, 250),
+        stroke = Color3.fromRGB(220, 220, 240),
+        success = Color3.fromRGB(60, 180, 60),
+        error = Color3.fromRGB(220, 60, 60),
+        hoverLight = Color3.fromRGB(240, 240, 255),
+        placeholder = Color3.fromRGB(150, 150, 150),
+        scrollbar = Color3.fromRGB(180, 180, 200)
+    },
+    dark = {
+        mainBg = Color3.fromRGB(35, 35, 45),
+        mainGradientStart = Color3.fromRGB(50, 50, 60),
+        mainGradientEnd = Color3.fromRGB(25, 25, 35),
+        textPrimary = Color3.fromRGB(240, 240, 255),
+        textSecondary = Color3.fromRGB(180, 180, 200),
+        buttonBg = Color3.fromRGB(50, 50, 60),
+        buttonGradientStart = Color3.fromRGB(60, 60, 70),
+        buttonGradientEnd = Color3.fromRGB(40, 40, 50),
+        stroke = Color3.fromRGB(70, 70, 80),
+        success = Color3.fromRGB(100, 200, 100),
+        error = Color3.fromRGB(255, 100, 100),
+        hoverLight = Color3.fromRGB(70, 70, 80),
+        placeholder = Color3.fromRGB(120, 120, 140),
+        scrollbar = Color3.fromRGB(80, 80, 100)
+    }
+}
+
+local function applyTheme()
+    local colors = themeColors[currentTheme]
+    mainFrame.BackgroundColor3 = colors.mainBg
+    mainGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, colors.mainGradientStart),
+        ColorSequenceKeypoint.new(1, colors.mainGradientEnd)
+    }
+    mainStroke.Color = colors.stroke
+    titleLabel.TextColor3 = colors.textPrimary
+    searchLabel.TextColor3 = colors.textSecondary
+    searchBox.TextColor3 = colors.textPrimary
+    searchBox.PlaceholderColor3 = colors.placeholder
+    repeatLabel.TextColor3 = colors.textSecondary
+    repeatBox.TextColor3 = colors.textPrimary
+    repeatBox.PlaceholderColor3 = colors.placeholder
+    scrollFrame.ScrollBarImageColor3 = colors.scrollbar
+    statusLabel.TextColor3 = colors.success
+    refreshButton.BackgroundColor3 = colors.success
+    local brighterSuccess = Color3.new(
+        math.min(1, colors.success.R * 1.2),
+        math.min(1, colors.success.G * 1.2),
+        math.min(1, colors.success.B * 1.2)
+    )
+    refreshGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, brighterSuccess),
+        ColorSequenceKeypoint.new(1, colors.success)
+    }
+    closeButton.BackgroundColor3 = colors.error
+    local brighterError = Color3.new(
+        math.min(1, colors.error.R * 1.2),
+        math.min(1, colors.error.G * 1.2),
+        math.min(1, colors.error.B * 1.2)
+    )
+    closeGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, brighterError),
+        ColorSequenceKeypoint.new(1, colors.error)
+    }
+    floatIcon.BackgroundColor3 = colors.buttonBg
+    local darkerButton = Color3.new(
+        colors.buttonBg.R * 0.8,
+        colors.buttonBg.G * 0.8,
+        colors.buttonBg.B * 0.8
+    )
+    iconGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, colors.buttonBg),
+        ColorSequenceKeypoint.new(1, darkerButton)
+    }
+    iconStroke.Color = colors.stroke
+    searchFrame.BackgroundColor3 = colors.buttonBg
+    searchCorner.CornerRadius = UDim.new(0, 10)
+    repeatFrame.BackgroundColor3 = colors.buttonBg
+    repeatCorner.CornerRadius = UDim.new(0, 10)
+end
+
+local floatIcon = Instance.new("TextButton")
+floatIcon.Name = "FloatIcon"
+floatIcon.Size = UDim2.new(0, 60, 0, 60)
+floatIcon.Position = UDim2.new(0, 20, 0, 20)
+floatIcon.BackgroundColor3 = themeColors.light.buttonBg
+floatIcon.Text = "📱"
+floatIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatIcon.TextScaled = true
+floatIcon.Font = Enum.Font.GothamBold
+floatIcon.Parent = screenGui
+
+local iconCorner = Instance.new("UICorner")
+iconCorner.CornerRadius = UDim.new(1, 0)
+iconCorner.Parent = floatIcon
+
+local iconStroke = Instance.new("UIStroke")
+iconStroke.Color = themeColors.light.stroke
+iconStroke.Thickness = 2
+iconStroke.Parent = floatIcon
+
+local iconGradient = Instance.new("UIGradient")
+local darkerLightBg = Color3.new(
+    themeColors.light.buttonBg.R * 0.8,
+    themeColors.light.buttonBg.G * 0.8,
+    themeColors.light.buttonBg.B * 0.8
+)
+iconGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, themeColors.light.buttonBg),
+    ColorSequenceKeypoint.new(1, darkerLightBg)
+}
+iconGradient.Rotation = 45
+iconGradient.Parent = floatIcon
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 450, 0, 550)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -275)
+mainFrame.BackgroundColor3 = themeColors.light.mainBg
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 15)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = themeColors.light.stroke
+mainStroke.Thickness = 2
+mainStroke.Parent = mainFrame
+
+local mainGradient = Instance.new("UIGradient")
+mainGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, themeColors.light.mainGradientStart),
+    ColorSequenceKeypoint.new(1, themeColors.light.mainGradientEnd)
+}
+mainGradient.Rotation = 90
+mainGradient.Parent = mainFrame
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 60)
+titleBar.BackgroundTransparency = 1
+titleBar.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, -160, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🔥 Legend Event"
+titleLabel.TextColor3 = themeColors.light.textPrimary
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 40, 0, 40)
+closeButton.Position = UDim2.new(1, -50, 0, 10)
+closeButton.BackgroundColor3 = themeColors.light.error
+closeButton.Text = "✕"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextScaled = true
+closeButton.Font = Enum.Font.GothamBold
+closeButton.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+
+local closeGradient = Instance.new("UIGradient")
+local initialBrighterError = Color3.new(
+    math.min(1, themeColors.light.error.R * 1.2),
+    math.min(1, themeColors.light.error.G * 1.2),
+    math.min(1, themeColors.light.error.B * 1.2)
+)
+closeGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, initialBrighterError),
+    ColorSequenceKeypoint.new(1, themeColors.light.error)
+}
+closeGradient.Rotation = 45
+closeGradient.Parent = closeButton
+
+local searchFrame = Instance.new("Frame")
+searchFrame.Name = "SearchFrame"
+searchFrame.Size = UDim2.new(1, -20, 0, 45)
+searchFrame.Position = UDim2.new(0, 10, 0, 70)
+searchFrame.BackgroundColor3 = themeColors.light.buttonBg
+searchFrame.Parent = mainFrame
+
+local searchCorner = Instance.new("UICorner")
+searchCorner.CornerRadius = UDim.new(0, 10)
+searchCorner.Parent = searchFrame
+
+local searchLabel = Instance.new("TextLabel")
+searchLabel.Size = UDim2.new(0, 80, 1, 0)
+searchLabel.BackgroundTransparency = 1
+searchLabel.Text = "🔍 Search:"
+searchLabel.TextColor3 = themeColors.light.textSecondary
+searchLabel.TextScaled = true
+searchLabel.Font = Enum.Font.Gotham
+searchLabel.TextXAlignment = Enum.TextXAlignment.Left
+searchLabel.Parent = searchFrame
+
+local searchBox = Instance.new("TextBox")
+searchBox.Name = "SearchBox"
+searchBox.Size = UDim2.new(1, -90, 1, 0)
+searchBox.Position = UDim2.new(0, 80, 0, 0)
+searchBox.BackgroundTransparency = 1
+searchBox.Text = ""
+searchBox.PlaceholderText = "Enter RemoteEvent name..."
+searchBox.TextColor3 = themeColors.light.textPrimary
+searchBox.PlaceholderColor3 = themeColors.light.placeholder
+searchBox.TextScaled = true
+searchBox.Font = Enum.Font.Gotham
+searchBox.TextXAlignment = Enum.TextXAlignment.Left
+searchBox.Parent = searchFrame
+
+local repeatFrame = Instance.new("Frame")
+repeatFrame.Name = "RepeatFrame"
+repeatFrame.Size = UDim2.new(0, 120, 0, 45)
+repeatFrame.Position = UDim2.new(1, -140, 0, 70)
+repeatFrame.BackgroundColor3 = themeColors.light.buttonBg
+repeatFrame.Parent = mainFrame
+
+local repeatCorner = Instance.new("UICorner")
+repeatCorner.CornerRadius = UDim.new(0, 10)
+repeatCorner.Parent = repeatFrame
+
+local repeatLabel = Instance.new("TextLabel")
+repeatLabel.Size = UDim2.new(0, 50, 1, 0)
+repeatLabel.BackgroundTransparency = 1
+repeatLabel.Text = "🔁 x:"
+repeatLabel.TextColor3 = themeColors.light.textSecondary
+repeatLabel.TextScaled = true
+repeatLabel.Font = Enum.Font.Gotham
+repeatLabel.TextXAlignment = Enum.TextXAlignment.Left
+repeatLabel.Parent = repeatFrame
+
+local repeatBox = Instance.new("TextBox")
+repeatBox.Name = "RepeatBox"
+repeatBox.Size = UDim2.new(1, -60, 1, 0)
+repeatBox.Position = UDim2.new(0, 50, 0, 0)
+repeatBox.BackgroundTransparency = 1
+repeatBox.Text = "1"
+repeatBox.PlaceholderText = "Times..."
+repeatBox.TextColor3 = themeColors.light.textPrimary
+repeatBox.PlaceholderColor3 = themeColors.light.placeholder
+repeatBox.TextScaled = true
+repeatBox.Font = Enum.Font.Gotham
+repeatBox.TextXAlignment = Enum.TextXAlignment.Left
+repeatBox.Parent = repeatFrame
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Name = "ScrollFrame"
+scrollFrame.Size = UDim2.new(1, -20, 1, -200)
+scrollFrame.Position = UDim2.new(0, 10, 0, 130)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 8
+scrollFrame.ScrollBarImageColor3 = themeColors.light.scrollbar
+scrollFrame.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 8)
+listLayout.Parent = scrollFrame
+
+local refreshButton = Instance.new("TextButton")
+refreshButton.Name = "RefreshButton"
+refreshButton.Size = UDim2.new(0, 60, 0, 45)
+refreshButton.Position = UDim2.new(0, 10, 0, 70)
+refreshButton.BackgroundColor3 = themeColors.light.success
+refreshButton.Text = "🔄"
+refreshButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+refreshButton.TextScaled = true
+refreshButton.Font = Enum.Font.GothamBold
+refreshButton.Parent = mainFrame
+
+local refreshCorner = Instance.new("UICorner")
+refreshCorner.CornerRadius = UDim.new(0, 10)
+refreshCorner.Parent = refreshButton
+
+local refreshGradient = Instance.new("UIGradient")
+local initialBrighterSuccess = Color3.new(
+    math.min(1, themeColors.light.success.R * 1.2),
+    math.min(1, themeColors.light.success.G * 1.2),
+    math.min(1, themeColors.light.success.B * 1.2)
+)
+refreshGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, initialBrighterSuccess),
+    ColorSequenceKeypoint.new(1, themeColors.light.success)
+}
+refreshGradient.Rotation = 45
+refreshGradient.Parent = refreshButton
+
+local themeButton = Instance.new("TextButton")
+themeButton.Name = "ThemeButton"
+themeButton.Size = UDim2.new(0, 60, 0, 45)
+themeButton.Position = UDim2.new(0, 80, 0, 70)
+themeButton.BackgroundColor3 = Color3.fromRGB(150, 150, 200)
+themeButton.Text = "🌙"
+themeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+themeButton.TextScaled = true
+themeButton.Font = Enum.Font.GothamBold
+themeButton.Parent = mainFrame
+
+local themeCorner = Instance.new("UICorner")
+themeCorner.CornerRadius = UDim.new(0, 10)
+themeCorner.Parent = themeButton
+
+local themeGradient = Instance.new("UIGradient")
+themeGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(170, 170, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 130, 180))
+}
+themeGradient.Rotation = 45
+themeGradient.Parent = themeButton
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, -20, 0, 30)
+statusLabel.Position = UDim2.new(0, 10, 1, -30)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Ready to use"
+statusLabel.TextColor3 = themeColors.light.success
+statusLabel.TextScaled = true
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Parent = mainFrame
+
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    TweenService:Create(mainFrame, TweenInfo.new(0.1), {Position = position}):Play()
+end
+
+local function makeDraggable(frame)
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateInput(input)
+        end
+    end)
+end
+
+makeDraggable(titleBar)
+
+local isOpen = false
+floatIcon.MouseButton1Click:Connect(function()
+    isOpen = not isOpen
+    if isOpen then
+        mainFrame.Visible = true
+        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -225, 0.5, -275)}):Play()
+        TweenService:Create(floatIcon, TweenInfo.new(0.2), {Size = UDim2.new(0, 50, 0, 50)}):Play()
+        floatIcon.Text = "⚡"
+    else
+        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -225, -1, 0)}):Play()
+        task.wait(0.3)
+        mainFrame.Visible = false
+        TweenService:Create(floatIcon, TweenInfo.new(0.2), {Size = UDim2.new(0, 60, 0, 60)}):Play()
+        floatIcon.Text = "📱"
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    isOpen = false
+    TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -225, -1, 0)}):Play()
+    task.wait(0.3)
+    mainFrame.Visible = false
+    TweenService:Create(floatIcon, TweenInfo.new(0.2), {Size = UDim2.new(0, 60, 0, 60)}):Play()
+    floatIcon.Text = "📱"
+end)
+
+local function addHover(button, hoverColor, originalColor)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = originalColor}):Play()
+    end)
+end
+
+addHover(refreshButton, Color3.fromRGB(120, 220, 120), themeColors.light.success)
+addHover(closeButton, Color3.fromRGB(255, 120, 120), themeColors.light.error)
+addHover(floatIcon, themeColors.light.hoverLight, themeColors.light.buttonBg)
+addHover(themeButton, Color3.fromRGB(170, 170, 220), Color3.fromRGB(150, 150, 200))
+
+themeButton.MouseButton1Click:Connect(function()
+    currentTheme = currentTheme == "light" and "dark" or "light"
+    themeButton.Text = currentTheme == "light" and "🌙" or "☀️"
+    applyTheme()
+    updateList()
+end)
+
+local function scanRemotes(searchTerm)
+    local remotes = {}
+    local servicesToScan = {
+        ReplicatedStorage,
+        game:GetService("Workspace"),
+        game:GetService("StarterGui"),
+        game:GetService("Lighting"),
+        playerGui,
+        game:GetService("ServerStorage"),
+        game:GetService("ReplicatedFirst")
+    }
+    
+    for _, service in pairs(servicesToScan) do
+        pcall(function()
+            for _, obj in pairs(service:GetDescendants()) do
+                if obj:IsA("RemoteEvent") then
+                    if searchTerm == "" or string.find(string.lower(obj.Name), string.lower(searchTerm)) ~= nil then
+                        if not table.find(remotes, obj) then
+                            table.insert(remotes, obj)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    pcall(function()
+        for _, obj in pairs(game:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and not table.find(remotes, obj) then
+                if searchTerm == "" or string.find(string.lower(obj.Name), string.lower(searchTerm)) ~= nil then
+                    table.insert(remotes, obj)
+                end
+            end
+        end
+    end)
+    
+    table.sort(remotes, function(a, b) return a.Name < b.Name end)
+    return remotes
+end
+
+local function createButton(remoteEvent)
+    local colors = themeColors[currentTheme]
+    local button = Instance.new("TextButton")
+    button.Name = remoteEvent.Name
+    button.Size = UDim2.new(1, -10, 0, 50)
+    button.BackgroundColor3 = colors.buttonBg
+    button.Text = "🚀 " .. remoteEvent.Name .. " (in " .. remoteEvent.Parent.Name .. ")"
+    button.TextColor3 = colors.textPrimary
+    button.TextScaled = true
+    button.Font = Enum.Font.Gotham
+    button.Parent = scrollFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = button
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = colors.stroke
+    btnStroke.Thickness = 1
+    btnStroke.Parent = button
+
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, colors.buttonGradientStart),
+        ColorSequenceKeypoint.new(1, colors.buttonGradientEnd)
+    }
+    btnGradient.Rotation = 45
+    btnGradient.Parent = button
+
+    button.MouseButton1Click:Connect(function()
+        local repeatCount = tonumber(repeatBox.Text) or 1
+        local successCount = 0
+        local errorOccurred = false
+        
+        for i = 1, repeatCount do
+            local success, err = pcall(function()
+                remoteEvent:FireServer()
+            end)
+            if success then
+                successCount = successCount + 1
+            else
+                errorOccurred = true
+                break
+            end
+            if i < repeatCount then
+                task.wait(0.01) -- Small delay to prevent overwhelming
+            end
+        end
+        
+        if not errorOccurred then
+            statusLabel.Text = "Fired " .. successCount .. " times: " .. remoteEvent.Name
+            statusLabel.TextColor3 = colors.success
+            
+            local successTween = TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.new(colors.success.R * 0.8, colors.success.G * 0.8, colors.success.B * 0.8),
+                Size = UDim2.new(1, -5, 0, 55)
+            })
+            successTween:Play()
+            successTween.Completed:Connect(function()
+                TweenService:Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = colors.buttonBg,
+                    Size = UDim2.new(1, -10, 0, 50)
+                }):Play()
+            end)
