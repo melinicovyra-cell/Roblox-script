@@ -1,0 +1,196 @@
+-- [[ KR_BACKDOOR V9.1: ANIMATED PRO EDITION ]] --
+local targetName = "RemoteEvent"
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- [[ ГАРАНТИРОВАННЫЙ UI PARENT ]] --
+local parentUI = nil
+local success, _ = pcall(function() parentUI = game:GetService("CoreGui") end)
+if not success or not parentUI then parentUI = Players.LocalPlayer:WaitForChild("PlayerGui") end
+
+if parentUI:FindFirstChild("kr_backdoor_v9") then parentUI.kr_backdoor_v9:Destroy() end
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "kr_backdoor_v9"
+sg.ResetOnSpawn = false
+sg.DisplayOrder = 999
+sg.Parent = parentUI
+
+-- [[ УТИЛИТЫ АНИМАЦИИ ]] --
+local function round(obj, radius)
+    local uic = Instance.new("UICorner")
+    uic.CornerRadius = UDim.new(0, radius or 12)
+    uic.Parent = obj
+end
+
+local function addButtonEffects(button, defaultColor, hoverColor)
+    local scale = Instance.new("UIScale", button)
+    
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = defaultColor}):Play()
+    end)
+    
+    button.MouseButton1Down:Connect(function()
+        TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 0.95}):Play()
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 1}):Play()
+    end)
+end
+
+-- [[ АНИМАЦИЯ ГРАДИЕНТА ]] --
+local function applyInfernoGradient(obj)
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(150, 0, 0)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(220, 20, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    })
+    grad.Parent = obj
+    task.spawn(function()
+        local t = 0
+        while grad and grad.Parent do
+            t = t + 0.03
+            grad.Offset = Vector2.new(math.sin(t) * 0.4, 0)
+            grad.Rotation = grad.Rotation + 0.4
+            task.wait()
+        end
+    end)
+end
+
+-- [[ 1. ЗАГРУЗОЧНЫЙ ЭКРАН ]] --
+local loader = Instance.new("Frame", sg)
+loader.Size = UDim2.new(0, 380, 0, 160)
+loader.Position = UDim2.new(0.5, -190, 0.5, -80)
+loader.BackgroundColor3 = Color3.new(1, 1, 1)
+loader.BorderSizePixel = 0
+loader.ZIndex = 100
+round(loader, 20)
+applyInfernoGradient(loader)
+
+local lTitle = Instance.new("TextLabel", loader)
+lTitle.Size = UDim2.new(1, 0, 0, 90); lTitle.Text = "kr_backdoor"; lTitle.TextColor3 = Color3.new(1, 1, 1); lTitle.Font = "GothamBold"; lTitle.TextSize = 42; lTitle.ZIndex = 101; lTitle.BackgroundTransparency = 1
+local statusLabel = Instance.new("TextLabel", loader)
+statusLabel.Size = UDim2.new(1, 0, 0, 40); statusLabel.Position = UDim2.new(0, 0, 0.65, 0); statusLabel.Text = "Initializing Interface..."; statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200); statusLabel.Font = "GothamMedium"; statusLabel.TextSize = 18; statusLabel.ZIndex = 101; statusLabel.BackgroundTransparency = 1
+
+-- [[ 2. ГЛАВНОЕ ОКНО ]] --
+local mainFrame = Instance.new("Frame", sg)
+mainFrame.Size = UDim2.new(0, 650, 0, 480)
+mainFrame.Position = UDim2.new(0.5, -325, 0.5, -240)
+mainFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+mainFrame.Visible = false
+round(mainFrame, 15)
+applyInfernoGradient(mainFrame)
+Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(150, 0, 0)
+
+local header = Instance.new("Frame", mainFrame)
+header.Size = UDim2.new(1, 0, 0, 50); header.BackgroundColor3 = Color3.new(0,0,0); header.BackgroundTransparency = 0.6; round(header, 15)
+local titleLabel = Instance.new("TextLabel", header)
+titleLabel.Size = UDim2.new(1, -20, 1, 0); titleLabel.Position = UDim2.new(0, 15, 0, 0); titleLabel.Text = "KR_BACKDOOR | INFERNAL V9.1"; titleLabel.TextColor3 = Color3.new(1, 1, 1); titleLabel.Font = "GothamBold"; titleLabel.TextSize = 16; titleLabel.TextXAlignment = "Left"; titleLabel.BackgroundTransparency = 1
+
+-- ПЕРЕДВИЖЕНИЕ
+local function makeDraggable(obj, target)
+    local dragging, dragInput, dragStart, startPos
+    obj.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; dragStart = input.Position; startPos = target.Position end end)
+    UserInputService.InputChanged:Connect(function(input) if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - dragStart; target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
+    UserInputService.InputEnded:Connect(function() dragging = false end)
+end
+makeDraggable(header, mainFrame)
+
+-- ТАБЫ
+local pages = {
+    Exec = Instance.new("Frame", mainFrame),
+    Scripts = Instance.new("ScrollingFrame", mainFrame),
+    Scanner = Instance.new("ScrollingFrame", mainFrame)
+}
+
+for name, page in pairs(pages) do
+    page.Size = UDim2.new(1, 0, 1, -60); page.Position = UDim2.new(0, 0, 0, 60); page.BackgroundTransparency = 1; page.Visible = (name == "Exec")
+    if page:IsA("ScrollingFrame") then page.BorderSizePixel = 0; page.ScrollBarThickness = 3; page.ScrollBarImageColor3 = Color3.new(1,1,1) end
+end
+
+local function createTab(name, x, page)
+    local b = Instance.new("TextButton", header); b.Size = UDim2.new(0, 100, 0, 30); b.Position = UDim2.new(1, x, 0, 10); b.BackgroundColor3 = Color3.fromRGB(60, 0, 0); b.Text = name; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 10; round(b, 8)
+    addButtonEffects(b, Color3.fromRGB(60, 0, 0), Color3.fromRGB(120, 0, 0))
+    b.MouseButton1Click:Connect(function() for _, p in pairs(pages) do p.Visible = false end; page.Visible = true end)
+end
+createTab("EXECUTOR", -330, pages.Exec)
+createTab("SCRIPTS", -220, pages.Scripts)
+createTab("SCANNER", -110, pages.Scanner)
+
+-- [[ EXECUTOR ]] --
+local editor = Instance.new("TextBox", pages.Exec)
+editor.Size = UDim2.new(0.94, 0, 0, 280); editor.Position = UDim2.new(0.03, 0, 0.05, 0); editor.BackgroundColor3 = Color3.new(0,0,0); editor.TextColor3 = Color3.fromRGB(255, 100, 100); editor.Font = "Code"; editor.TextSize = 14; editor.MultiLine = true; editor.Text = "-- Write script here"; editor.ClearTextOnFocus = false; editor.TextXAlignment = "Left"; editor.TextYAlignment = "Top"; round(editor, 10)
+Instance.new("UIPadding", editor).PaddingLeft = UDim.new(0, 10)
+
+local runBtn = Instance.new("TextButton", pages.Exec); runBtn.Size = UDim2.new(0.45, 0, 0, 50); runBtn.Position = UDim2.new(0.03, 0, 0.85, 0); runBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); runBtn.Text = "EXECUTE"; runBtn.TextColor3 = Color3.new(1,1,1); runBtn.Font = "GothamBold"; round(runBtn, 10)
+local clearBtn = Instance.new("TextButton", pages.Exec); clearBtn.Size = UDim2.new(0.45, 0, 0, 50); clearBtn.Position = UDim2.new(0.52, 0, 0.85, 0); clearBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0); clearBtn.Text = "CLEAR"; clearBtn.TextColor3 = Color3.new(1,1,1); clearBtn.Font = "GothamBold"; round(clearBtn, 10)
+
+addButtonEffects(runBtn, Color3.fromRGB(0, 80, 0), Color3.fromRGB(0, 150, 0))
+addButtonEffects(clearBtn, Color3.fromRGB(100, 0, 0), Color3.fromRGB(180, 0, 0))
+
+-- [[ БИБЛИОТЕКА SCRIPTS ]] --
+local sList = Instance.new("UIListLayout", pages.Scripts); sList.Padding = UDim.new(0, 10); sList.HorizontalAlignment = "Center"
+local library = {
+    {n = "SS MEGA LOADER", c = 'require(123255432303221):Pload("'..Players.LocalPlayer.Name..'")'},
+    {n = "NAKED ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v.Character then for _,c in pairs(v.Character:GetChildren()) do if c:IsA('Clothing') or c:IsA('Accessory') or c:IsA('ShirtGraphic') then c:Destroy() end end end end"},
+    {n = "HEADLESS ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() v.Character.Head.Transparency = 1; v.Character.Head.face:Destroy() end) end"},
+    {n = "NOOBIFY ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() local bc = v.Character['Body Colors']; bc.HeadColor3 = Color3.new(1,1,0); bc.LeftArmColor3 = Color3.new(1,1,0); bc.RightArmColor3 = Color3.new(1,1,0); bc.TorsoColor3 = Color3.new(0,0,1); bc.LeftLegColor3 = Color3.new(0,1,0); bc.RightLegColor3 = Color3.new(0,1,0) end) end"},
+    {n = "FREEZE ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character.HumanoidRootPart.Anchored = true end end"},
+    {n = "JAIL ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then local cf = v.Character.HumanoidRootPart.CFrame; for i=1,4 do local p = Instance.new('Part', workspace); p.Size = Vector3.new(10,15,1); p.Anchored = true; p.CFrame = cf * CFrame.Angles(0, math.rad(i*90), 0) * CFrame.new(0,0,5) end end end"},
+    {n = "SPAM KRSP TEAM", c = "while true do local h = Instance.new('Hint', workspace); h.Text = 'SERVER HACKED BY KRSP TEAM'; task.wait(0.5); h:Destroy() end"},
+    {n = "RAINBOW DISCO", c = "spawn(function() while wait() do local c = Color3.fromHSV(tick() % 5 / 5, 1, 1); game.Lighting.FogColor = c; game.Lighting.Ambient = c; game.Lighting.FogEnd = 200; task.wait() end end)"},
+    {n = "BLACK HOLE", c = "local p = Instance.new('Part', workspace); p.Anchored = true; p.CanCollide = false; p.Size = Vector3.new(15,15,15); p.Color = Color3.new(0,0,0); while wait() do for _,v in pairs(workspace:GetChildren()) do if v:IsA('BasePart') and not v.Anchored then v.CFrame = p.CFrame end end end"},
+    {n = "TOTAL DARKNESS", c = "game.Lighting.TimeOfDay = '00:00:00'; game.Lighting.Brightness = 0"},
+    {n = "NUKE SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do Instance.new('Explosion', v.Character.PrimaryPart).Position = v.Character.PrimaryPart.Position end"},
+    {n = "KILL OTHERS", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character:BreakJoints() end end"}
+}
+
+local backdoor = nil
+local function execute(code) if backdoor then backdoor:FireServer(code) end end
+
+for _, data in pairs(library) do
+    local b = Instance.new("TextButton", pages.Scripts); b.Size = UDim2.new(0.9, 0, 0, 45); b.BackgroundColor3 = Color3.fromRGB(100, 0, 0); b.Text = data.n; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; round(b, 10); b.TextSize = 12
+    addButtonEffects(b, Color3.fromRGB(100, 0, 0), Color3.fromRGB(160, 0, 0))
+    b.MouseButton1Click:Connect(function() execute(data.c) end)
+end
+pages.Scripts.CanvasSize = UDim2.new(0,0,0, #library * 55 + 20)
+
+-- [[ SCANNER ]] --
+local function scanRemotes()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("RemoteEvent") then
+            local l = Instance.new("TextLabel", pages.Scanner); l.Size = UDim2.new(0.95, 0, 0, 25); l.BackgroundColor3 = Color3.new(0,0,0); l.Text = v:GetFullName(); l.TextColor3 = Color3.new(0.8, 0.8, 0.8); l.TextSize = 9; l.Font = "Code"; round(l, 4)
+        end
+    end
+end
+Instance.new("UIListLayout", pages.Scanner).HorizontalAlignment = "Center"
+
+-- [[ TOGGLE (K) ]] --
+local visible = true
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.K then visible = not visible; mainFrame.Visible = visible end end)
+
+-- [[ СТАРТ ]] --
+runBtn.MouseButton1Click:Connect(function() execute(editor.Text) end)
+clearBtn.MouseButton1Click:Connect(function() editor.Text = "" end)
+
+task.spawn(function()
+    wait(1.5)
+    backdoor = ReplicatedStorage:FindFirstChild(targetName)
+    if not backdoor then
+        for _, v in pairs(ReplicatedStorage:GetChildren()) do if v:IsA("RemoteEvent") then backdoor = v; break end end
+    end
+    statusLabel.Text = backdoor and "System Synced" or "Offline Mode"
+    wait(1)
+    statusLabel.Text = "Created by Krsp Team"
+    scanRemotes()
+    wait(1.5); loader:Destroy(); mainFrame.Visible = true
+end)
