@@ -1,0 +1,2019 @@
+-- ██╗     ██╗   ██╗ █████╗  ██████╗ ███████╗
+-- ██║     ██║   ██║██╔══██╗██╔═══██╗██╔════╝
+-- ██║     ██║   ██║███████║██║   ██║███████╗
+-- ██║     ██║   ██║██╔══██║██║   ██║╚════██║
+-- ███████╗╚██████╔╝██║  ██║╚██████╔╝███████║
+-- ╚══════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+--           v3.0 — Enhanced Edition
+-- Вставь в исполнитель (Synapse, KRNL, Fluxus, Delta)
+
+local Players        = game:GetService("Players")
+local UIS            = game:GetService("UserInputService")
+local TweenService   = game:GetService("TweenService")
+local RunService     = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- ── КОНТЕЙНЕР ──────────────────────────────────────────────────
+local guiParent = (gethui and gethui()) or game:GetService("CoreGui")
+
+-- Убрать старую копию
+local old = guiParent:FindFirstChild("LuaOS_v3")
+if old then old:Destroy() end
+task.wait()
+
+local gui = Instance.new("ScreenGui")
+gui.Name            = "LuaOS_v3"
+gui.ResetOnSpawn    = false
+gui.ZIndexBehavior  = Enum.ZIndexBehavior.Global
+gui.IgnoreGuiInset  = true
+gui.Parent          = guiParent
+
+-- ── ТЕМЫ ──────────────────────────────────────────────────────
+local Themes = {
+    Dark = {
+        name     = "Dark",
+        bg1      = Color3.fromRGB(8,  10, 22),
+        bg2      = Color3.fromRGB(12, 16, 35),
+        surface  = Color3.fromRGB(16, 21, 45),
+        surface2 = Color3.fromRGB(22, 28, 58),
+        border   = Color3.fromRGB(50, 65, 120),
+        accent   = Color3.fromRGB(88, 130, 255),
+        accent2  = Color3.fromRGB(110,160, 255),
+        accentDk = Color3.fromRGB(55,  90, 200),
+        text     = Color3.fromRGB(220, 228, 255),
+        textDim  = Color3.fromRGB(110, 125, 175),
+        textMut  = Color3.fromRGB(65,  78, 130),
+        green    = Color3.fromRGB(50,  220, 110),
+        red      = Color3.fromRGB(255,  70,  70),
+        yellow   = Color3.fromRGB(255, 200,  50),
+        term     = Color3.fromRGB(5,   7,  16),
+        termTxt  = Color3.fromRGB(70,  240, 120),
+        close    = Color3.fromRGB(220,  60,  60),
+        minimize = Color3.fromRGB(240, 185,  35),
+        maximize = Color3.fromRGB(50,  200, 80),
+        winTitle = Color3.fromRGB(20,  26,  55),
+        gradA    = Color3.fromRGB(8,10,25),
+        gradB    = Color3.fromRGB(14,20,45),
+        dotCol   = Color3.fromRGB(40,55,100),
+    },
+    Hacker = {
+        name     = "Hacker",
+        bg1      = Color3.fromRGB(2, 4, 2),
+        bg2      = Color3.fromRGB(5, 12, 5),
+        surface  = Color3.fromRGB(8, 18, 8),
+        surface2 = Color3.fromRGB(12, 25, 12),
+        border   = Color3.fromRGB(20, 80, 20),
+        accent   = Color3.fromRGB(0, 255, 65),
+        accent2  = Color3.fromRGB(50, 255, 100),
+        accentDk = Color3.fromRGB(0, 150, 40),
+        text     = Color3.fromRGB(180, 255, 190),
+        textDim  = Color3.fromRGB(60, 140, 70),
+        textMut  = Color3.fromRGB(30, 80, 35),
+        green    = Color3.fromRGB(0, 255, 65),
+        red      = Color3.fromRGB(255, 50, 50),
+        yellow   = Color3.fromRGB(200, 255, 50),
+        term     = Color3.fromRGB(0, 2, 0),
+        termTxt  = Color3.fromRGB(0, 255, 65),
+        close    = Color3.fromRGB(200, 40, 40),
+        minimize = Color3.fromRGB(200, 200, 30),
+        maximize = Color3.fromRGB(0, 200, 50),
+        winTitle = Color3.fromRGB(5, 15, 5),
+        gradA    = Color3.fromRGB(0,2,0),
+        gradB    = Color3.fromRGB(5,15,5),
+        dotCol   = Color3.fromRGB(0,60,10),
+    },
+    Sakura = {
+        name     = "Sakura",
+        bg1      = Color3.fromRGB(25, 10, 18),
+        bg2      = Color3.fromRGB(35, 14, 28),
+        surface  = Color3.fromRGB(42, 18, 35),
+        surface2 = Color3.fromRGB(55, 24, 45),
+        border   = Color3.fromRGB(120, 50, 90),
+        accent   = Color3.fromRGB(255, 100, 160),
+        accent2  = Color3.fromRGB(255, 140, 190),
+        accentDk = Color3.fromRGB(180, 60, 110),
+        text     = Color3.fromRGB(255, 220, 240),
+        textDim  = Color3.fromRGB(170, 110, 145),
+        textMut  = Color3.fromRGB(110, 60, 85),
+        green    = Color3.fromRGB(100, 220, 150),
+        red      = Color3.fromRGB(255, 70, 70),
+        yellow   = Color3.fromRGB(255, 210, 100),
+        term     = Color3.fromRGB(15, 5, 10),
+        termTxt  = Color3.fromRGB(255, 130, 180),
+        close    = Color3.fromRGB(220, 60, 60),
+        minimize = Color3.fromRGB(240, 185, 35),
+        maximize = Color3.fromRGB(100, 200, 120),
+        winTitle = Color3.fromRGB(35, 14, 28),
+        gradA    = Color3.fromRGB(20,8,15),
+        gradB    = Color3.fromRGB(35,14,30),
+        dotCol   = Color3.fromRGB(80,30,60),
+    },
+}
+
+local T = Themes.Dark -- текущая тема
+local ActiveTheme = "Dark"
+
+-- ── HELPERS ────────────────────────────────────────────────────
+local function tw(obj, props, t, style)
+    TweenService:Create(obj,
+        TweenInfo.new(t or .18, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        props):Play()
+end
+
+local function c(cls, props, parent)
+    local o = Instance.new(cls)
+    for k,v in pairs(props) do
+        pcall(function() o[k] = v end)
+    end
+    if parent then o.Parent = parent end
+    return o
+end
+
+local function corner(p, r)
+    return c("UICorner", {CornerRadius = UDim.new(0, r or 8)}, p)
+end
+
+local function stroke(p, col, thick, trans)
+    return c("UIStroke", {Color = col or T.border, Thickness = thick or 1, Transparency = trans or .4}, p)
+end
+
+local function pad(p, px)
+    local u = Instance.new("UIPadding")
+    u.PaddingLeft   = UDim.new(0, px)
+    u.PaddingRight  = UDim.new(0, px)
+    u.PaddingTop    = UDim.new(0, px)
+    u.PaddingBottom = UDim.new(0, px)
+    u.Parent = p
+end
+
+local function gradient(p, a, b, rot)
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new(a, b)
+    g.Rotation = rot or 0
+    g.Parent = p
+    return g
+end
+
+local function hover(btn, norm, hov, prop)
+    prop = prop or "BackgroundColor3"
+    btn.MouseEnter:Connect(function() tw(btn, {[prop]=hov})  end)
+    btn.MouseLeave:Connect(function() tw(btn, {[prop]=norm}) end)
+end
+
+local function shadow(parent, zIdx)
+    local s = c("Frame", {
+        Size = UDim2.new(1, 20, 1, 20),
+        Position = UDim2.new(0, -10, 0, -10),
+        BackgroundColor3 = Color3.new(0,0,0),
+        BackgroundTransparency = .65,
+        ZIndex = zIdx - 1,
+        BorderSizePixel = 0,
+    }, parent)
+    corner(s, 14)
+    return s
+end
+
+-- ── СИСТЕМА УВЕДОМЛЕНИЙ ───────────────────────────────────────
+local notifContainer = c("Frame", {
+    Size = UDim2.new(0, 320, 1, 0),
+    Position = UDim2.new(1, -330, 0, 10),
+    BackgroundTransparency = 1,
+    ZIndex = 8000,
+}, gui)
+c("UIListLayout", {
+    Padding = UDim.new(0, 8),
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+}, notifContainer)
+
+local function notify(title, text, duration, icon)
+    local nf = c("Frame", {
+        Size = UDim2.new(1, 0, 0, 70),
+        BackgroundColor3 = T.bg2,
+        BorderSizePixel = 0,
+        ZIndex = 8001,
+        BackgroundTransparency = 1,
+    }, notifContainer)
+    corner(nf, 10)
+    stroke(nf, T.accent, 1, .3)
+
+    -- Акцентная полоска слева
+    local bar = c("Frame", {
+        Size = UDim2.new(0, 4, 1, -8),
+        Position = UDim2.new(0, 4, 0, 4),
+        BackgroundColor3 = T.accent,
+        BorderSizePixel = 0,
+        ZIndex = 8002,
+    }, nf)
+    corner(bar, 2)
+
+    c("TextLabel", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(0, 14, 0, 8),
+        BackgroundTransparency = 1,
+        Text = icon or "🔔",
+        TextSize = 20,
+        ZIndex = 8002,
+    }, nf)
+
+    c("TextLabel", {
+        Size = UDim2.new(1, -60, 0, 22),
+        Position = UDim2.new(0, 48, 0, 6),
+        BackgroundTransparency = 1,
+        Text = title,
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        TextColor3 = T.text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 8002,
+    }, nf)
+
+    c("TextLabel", {
+        Size = UDim2.new(1, -60, 0, 30),
+        Position = UDim2.new(0, 48, 0, 28),
+        BackgroundTransparency = 1,
+        Text = text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextColor3 = T.textDim,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true,
+        ZIndex = 8002,
+    }, nf)
+
+    -- Анимация появления
+    tw(nf, {BackgroundTransparency = 0}, .3)
+
+    task.delay(duration or 4, function()
+        tw(nf, {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0)}, .3)
+        task.delay(.35, function() nf:Destroy() end)
+    end)
+end
+
+-- ── ФАЙЛОВАЯ СИСТЕМА ───────────────────────────────────────────
+local FS = {}
+local CWD = "/home/player"
+
+local function fsNew(t, content)
+    return {t=t, content=content or "", children={}, time=os.time()}
+end
+
+FS["/"]              = fsNew("dir")
+FS["/bin"]           = fsNew("dir")
+FS["/etc"]           = fsNew("dir")
+FS["/home"]          = fsNew("dir")
+FS["/home/player"]   = fsNew("dir")
+FS["/home/player/Documents"] = fsNew("dir")
+FS["/home/player/Music"]     = fsNew("dir")
+FS["/tmp"]           = fsNew("dir")
+FS["/var"]           = fsNew("dir")
+FS["/var/log"]       = fsNew("dir")
+
+local function regChild(parent, child)
+    if FS[parent] then
+        table.insert(FS[parent].children, child)
+    end
+end
+
+regChild("/",           "/bin")
+regChild("/",           "/etc")
+regChild("/",           "/home")
+regChild("/",           "/tmp")
+regChild("/",           "/var")
+regChild("/home",       "/home/player")
+regChild("/home/player","/home/player/Documents")
+regChild("/home/player","/home/player/Music")
+regChild("/var",        "/var/log")
+
+local function mkf(path, content, parent)
+    FS[path] = fsNew("file", content)
+    if parent then regChild(parent, path) end
+end
+
+mkf("/etc/hostname",              "luaos-roblox",                          "/etc")
+mkf("/etc/motd",                  "Добро пожаловать в LuaOS v3.0!\nНапиши 'help' для помощи.\nНовое: neofetch, tree, grep, mkdir, mv, cp, fortune\n", "/etc")
+mkf("/etc/os-release",            "NAME=LuaOS\nVERSION=3.0.0\nBUILD=Enhanced-Edition\nCODENAME=Aurora\n", "/etc")
+mkf("/etc/passwd",                "root:x:0:0:root:/root\nplayer:x:1000:1000:"..player.Name..":/home/player\n", "/etc")
+mkf("/home/player/readme.txt",    "Привет! Это LuaOS v3.0 — Enhanced Edition!\n\nНовые возможности:\n  • 3 темы оформления\n  • Калькулятор\n  • Музыкальный плеер\n  • Системный монитор\n  • Уведомления\n  • Экран блокировки\n  • 12+ новых команд терминала\n\nПиши 'neofetch' в терминале!\n", "/home/player")
+mkf("/home/player/todo.txt",      "1. Попробуй 'neofetch' в терминале\n2. Открой настройки и смени тему\n3. Запусти калькулятор\n4. ???\n5. PROFIT\n", "/home/player")
+mkf("/home/player/Documents/notes.txt", "Мои заметки:\n- LuaOS работает отлично\n- Нужно попробовать все темы\n", "/home/player/Documents")
+mkf("/tmp/session.log",           "Сессия начата: "..os.date("%H:%M:%S").."\n", "/tmp")
+mkf("/var/log/kernel.log",        "[OK] Ядро v3.0 загружено\n[OK] ФС смонтирована\n[OK] Демоны запущены\n[OK] Менеджер окон инициализирован\n[OK] Система уведомлений запущена\n[OK] Тема: Dark применена\n", "/var/log")
+mkf("/var/log/auth.log",          "[INFO] Пользователь "..player.Name.." авторизован\n", "/var/log")
+
+local function fsResolve(path)
+    if path == "~" then return "/home/player" end
+    if path:sub(1,2) == "~/" then
+        path = "/home/player/" .. path:sub(3)
+    end
+    if path:sub(1,1) ~= "/" then
+        path = (CWD == "/" and "/"..path) or (CWD.."/"..path)
+    end
+    local parts = {}
+    for seg in path:gmatch("[^/]+") do
+        if seg == ".." then table.remove(parts)
+        elseif seg ~= "." then table.insert(parts, seg) end
+    end
+    return (#parts == 0 and "/") or ("/"..table.concat(parts,"/"))
+end
+
+local function fsRead(path)
+    local nd = FS[fsResolve(path)]
+    return nd and nd.t == "file" and nd.content or nil
+end
+
+local function fsWrite(path, content)
+    local abs = fsResolve(path)
+    if FS[abs] then
+        FS[abs].content = content
+        FS[abs].time = os.time()
+    else
+        FS[abs] = fsNew("file", content)
+        local parentPath = abs:match("(.+)/[^/]+$") or "/"
+        if FS[parentPath] and FS[parentPath].t == "dir" then
+            table.insert(FS[parentPath].children, abs)
+        end
+    end
+end
+
+local function fsList(path)
+    local node = FS[fsResolve(path)]
+    return node and node.t == "dir" and node.children or nil
+end
+
+local function fsMkdir(path)
+    local abs = fsResolve(path)
+    if FS[abs] then return false, "уже существует" end
+    FS[abs] = fsNew("dir")
+    local parentPath = abs:match("(.+)/[^/]+$") or "/"
+    if FS[parentPath] and FS[parentPath].t == "dir" then
+        table.insert(FS[parentPath].children, abs)
+    end
+    return true
+end
+
+-- ── ЯДРО ───────────────────────────────────────────────────────
+local Kernel = { procs={}, pid=1, boot=os.clock() }
+
+local function kspawn(name, mem, sys)
+    local id = Kernel.pid; Kernel.pid+=1
+    Kernel.procs[id] = {
+        pid=id, name=name, state="running",
+        mem=mem or math.random(2,18), cpu=0,
+        start=os.clock(), sys=sys or false
+    }
+    return id
+end
+
+local function kkill(pid)
+    if not Kernel.procs[pid] then return false, "нет процесса" end
+    if Kernel.procs[pid].sys  then return false, "системный процесс" end
+    Kernel.procs[pid] = nil
+    return true
+end
+
+kspawn("init",         0, true)
+kspawn("kscheduler",   1, true)
+kspawn("syslogd",      2, true)
+kspawn("luaos-wm",     5, true)
+kspawn("notifyd",      1, true)
+
+RunService.Heartbeat:Connect(function(dt)
+    for _, p in pairs(Kernel.procs) do
+        p.cpu += dt * math.random(1,12)/100
+    end
+end)
+
+-- ── РАБОЧИЙ СТОЛ ───────────────────────────────────────────────
+local desktop = c("Frame", {
+    Size=UDim2.new(1,0,1,0),
+    BackgroundColor3=T.bg1,
+    BorderSizePixel=0,
+    ZIndex=1,
+}, gui)
+local desktopGrad = gradient(desktop, T.gradA, T.gradB, 135)
+
+-- Сетка точек
+local dots = c("Frame", {
+    Size=UDim2.new(1,0,1,0),
+    BackgroundTransparency=1,
+    ZIndex=1,
+}, desktop)
+
+do
+    local rows, cols = 20, 35
+    for r=0, rows do
+        for cc=0, cols do
+            c("Frame", {
+                Size=UDim2.new(0,2,0,2),
+                Position=UDim2.new(cc/cols, 0, r/rows, 0),
+                BackgroundColor3=T.dotCol,
+                BackgroundTransparency=0.6,
+                BorderSizePixel=0,
+                ZIndex=1,
+            }, dots)
+        end
+    end
+end
+
+-- ── ОКНА — СИСТЕМА ─────────────────────────────────────────────
+local Z = 10
+local WINS = {}
+local OpenWinNames = {} -- для таскбара
+
+local function makeDrag(handle, win)
+    local drag, dstart, dpos = false, nil, nil
+    handle.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag=true; dstart=i.Position; dpos=win.Position
+            i.Changed:Connect(function()
+                if i.UserInputState==Enum.UserInputState.End then drag=false end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if drag and i.UserInputType==Enum.UserInputType.MouseMovement then
+            local d=i.Position-dstart
+            win.Position=UDim2.new(dpos.X.Scale, dpos.X.Offset+d.X,
+                                   dpos.Y.Scale, dpos.Y.Offset+d.Y)
+        end
+    end)
+end
+
+local refreshTaskbar -- forward declare
+
+local function newWindow(title, w, h, x, y)
+    Z+=1
+    local z = Z
+
+    local win = c("Frame", {
+        Size=UDim2.new(0,w,0,h),
+        Position=UDim2.new(0,x or 200,0,y or 100),
+        BackgroundColor3=T.surface,
+        BorderSizePixel=0, ZIndex=z,
+        ClipsDescendants=true,
+    }, gui)
+    corner(win, 10)
+    stroke(win, T.accent, 1, .5)
+    shadow(win, z)
+
+    win.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 then
+            Z+=1; win.ZIndex=Z
+        end
+    end)
+
+    -- Заголовок
+    local bar = c("Frame", {
+        Size=UDim2.new(1,0,0,38),
+        BackgroundColor3=T.winTitle,
+        BorderSizePixel=0, ZIndex=z+1,
+    }, win)
+
+    c("Frame", {
+        Size=UDim2.new(1,0,0,1),
+        Position=UDim2.new(0,0,1,-1),
+        BackgroundColor3=T.accent,
+        BackgroundTransparency=0.7,
+        BorderSizePixel=0, ZIndex=z+2,
+    }, bar)
+
+    corner(bar, 10)
+    c("Frame", {
+        Size=UDim2.new(1,0,0.5,0),
+        Position=UDim2.new(0,0,0.5,0),
+        BackgroundColor3=T.winTitle,
+        BorderSizePixel=0, ZIndex=z+1,
+    }, bar)
+
+    -- Кнопки управления (●●●)
+    local function wbtn(col, xoff, sym, cb)
+        local b = c("TextButton", {
+            Size=UDim2.new(0,14,0,14),
+            Position=UDim2.new(1,xoff,0.5,-7),
+            BackgroundColor3=col,
+            Text="", ZIndex=z+3, BorderSizePixel=0,
+        }, bar)
+        corner(b,7)
+        local lbl=c("TextLabel", {
+            Size=UDim2.new(1,0,1,0),
+            BackgroundTransparency=1,
+            Text=sym, TextColor3=Color3.new(0,0,0),
+            Font=Enum.Font.GothamBold, TextSize=9,
+            Visible=false, ZIndex=z+4,
+        },b)
+        b.MouseEnter:Connect(function() lbl.Visible=true  end)
+        b.MouseLeave:Connect(function() lbl.Visible=false end)
+        b.MouseButton1Click:Connect(cb)
+        return b
+    end
+
+    local mini=false
+    local maxi=false
+    local orig=UDim2.new(0,w,0,h)
+    local origPos=UDim2.new(0,x or 200,0,y or 100)
+    local body
+
+    -- Закрыть
+    wbtn(T.close, -22, "✕", function()
+        tw(win,{Size=UDim2.new(0,w,0,0),BackgroundTransparency=1},.2)
+        task.delay(.25, function()
+            win:Destroy()
+            WINS[title]=nil
+            OpenWinNames[title]=nil
+            if refreshTaskbar then refreshTaskbar() end
+        end)
+    end)
+
+    -- Свернуть
+    wbtn(T.minimize, -40, "─", function()
+        if mini then
+            tw(win,{Size=orig},.2)
+            if body then body.Visible=true end
+            mini=false
+        else
+            tw(win,{Size=UDim2.new(0,w,0,38)},.2)
+            task.delay(.15,function()
+                if body then body.Visible=false end
+            end)
+            mini=true
+        end
+    end)
+
+    -- Развернуть (НОВОЕ)
+    wbtn(T.maximize, -58, "□", function()
+        if maxi then
+            tw(win,{Size=orig, Position=origPos},.25)
+            maxi=false
+        else
+            origPos=win.Position
+            orig=win.Size
+            tw(win,{Size=UDim2.new(1,0,1,-44), Position=UDim2.new(0,0,0,0)},.25)
+            maxi=true
+        end
+        if mini then
+            mini=false
+            if body then body.Visible=true end
+        end
+    end)
+
+    -- Заголовок текст
+    c("TextLabel", {
+        Size=UDim2.new(1,-120,1,0),
+        Position=UDim2.new(0,14,0,0),
+        BackgroundTransparency=1,
+        Text=title, Font=Enum.Font.GothamBold,
+        TextSize=13, TextColor3=T.text,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        ZIndex=z+2,
+    }, bar)
+
+    body = c("Frame", {
+        Size=UDim2.new(1,0,1,-38),
+        Position=UDim2.new(0,0,0,38),
+        BackgroundTransparency=1,
+        ZIndex=z+1, ClipsDescendants=true,
+    }, win)
+
+    makeDrag(bar, win)
+
+    -- Анимация появления
+    win.Size=UDim2.new(0,w,0,0)
+    win.BackgroundTransparency=1
+    tw(win,{Size=UDim2.new(0,w,0,h), BackgroundTransparency=0},.25,Enum.EasingStyle.Back)
+
+    WINS[title]=win
+    OpenWinNames[title]=true
+    if refreshTaskbar then refreshTaskbar() end
+
+    return win, body, z
+end
+
+-- ── ТЕРМИНАЛ — КОМАНДЫ ────────────────────────────────────────
+local cmdHistory = {}
+
+local Fortunes = {
+    "Удача улыбнётся тебе сегодня... или нет.",
+    "В мире Lua всё возможно, даже то, что невозможно.",
+    "Ошибка 404: удача не найдена. Попробуй позже.",
+    "Сегодня хороший день для программирования!",
+    "Не баг, а фича. Запомни это.",
+    "Кто рано встаёт, тот debug'ит до обеда.",
+    "print('Hello World') — начало великих дел.",
+    "Лучший антивирус — здравый смысл.",
+    "Код пишется один раз, а читается — тысячу.",
+    "Recursion: see Recursion.",
+    "Есть 10 типов людей: кто понимает двоичный код и кто нет.",
+    "Segfault? В Lua? Невозможно!",
+    "Терпение и труд всё перетрут... кроме бесконечного цикла.",
+    "sudo make me a sandwich",
+    "while true do sleep() end — философия жизни.",
+}
+
+local function runCmd(cmd, out)
+    local args={}
+    for a in cmd:gmatch("%S+") do table.insert(args,a) end
+    local cc=args[1]
+    if not cc or cc=="" then return end
+
+    table.insert(cmdHistory, cmd)
+
+    if cc=="help" then
+        out("╔═══════════════════════════════════════════╗", T.accent)
+        out("║       LuaOS Shell v3.0 — Справка         ║", T.accent)
+        out("╠═══════════════════════════════════════════╣", T.accent)
+        out("║  Файловая система:                        ║", T.accent2)
+        out("║  ls [путь]    — список файлов             ║", T.text)
+        out("║  cd [путь]    — сменить папку             ║", T.text)
+        out("║  cat [файл]   — читать файл               ║", T.text)
+        out("║  head [файл]  — первые 5 строк            ║", T.text)
+        out("║  tail [файл]  — последние 5 строк         ║", T.text)
+        out("║  echo [текст] — вывод / запись > файл     ║", T.text)
+        out("║  touch [файл] — создать файл              ║", T.text)
+        out("║  mkdir [папка]— создать папку              ║", T.text)
+        out("║  rm [файл]    — удалить файл              ║", T.text)
+        out("║  mv [a] [b]   — переместить               ║", T.text)
+        out("║  cp [a] [b]   — копировать                ║", T.text)
+        out("║  wc [файл]    — подсчёт строк/слов        ║", T.text)
+        out("║  grep [слово] [файл] — поиск              ║", T.text)
+        out("║  tree [путь]  — дерево файлов             ║", T.text)
+        out("║  pwd          — текущая папка             ║", T.text)
+        out("╠═══════════════════════════════════════════╣", T.accent2)
+        out("║  Система:                                 ║", T.accent2)
+        out("║  ps           — процессы                  ║", T.text)
+        out("║  kill [pid]   — завершить процесс         ║", T.text)
+        out("║  top          — нагрузка CPU/RAM          ║", T.text)
+        out("║  mem          — использование RAM         ║", T.text)
+        out("║  uptime       — время работы              ║", T.text)
+        out("║  date         — дата и время              ║", T.text)
+        out("║  whoami       — имя пользователя          ║", T.text)
+        out("║  hostname     — имя хоста                 ║", T.text)
+        out("║  uname        — версия ОС                 ║", T.text)
+        out("║  neofetch     — системная информация      ║", T.text)
+        out("║  history      — история команд            ║", T.text)
+        out("║  fortune      — случайная цитата          ║", T.text)
+        out("║  clear        — очистить экран            ║", T.text)
+        out("║  exit         — закрыть терминал          ║", T.text)
+        out("╚═══════════════════════════════════════════╝", T.accent)
+
+    elseif cc=="neofetch" then
+        local up=os.clock()-Kernel.boot
+        local h=math.floor(up/3600)
+        local m=math.floor(up%3600/60)
+        local cnt=0; local mem=0
+        for _,p in pairs(Kernel.procs) do cnt+=1; mem+=p.mem end
+
+        out("", T.text)
+        out("        ██╗     ██╗   ██╗ █████╗      "..player.Name.."@luaos", T.accent)
+        out("        ██║     ██║   ██║██╔══██╗     ─────────────────", T.accent)
+        out("        ██║     ██║   ██║███████║     OS:      LuaOS v3.0 Aurora", T.text)
+        out("        ██║     ██║   ██║██╔══██║     Kernel:  Luau (Roblox)", T.text)
+        out("        ███████╗╚██████╔╝██║  ██║     Uptime:  "..string.format("%02d:%02d", h, m), T.text)
+        out("        ╚══════╝ ╚═════╝ ╚═╝  ╚═╝     Shell:   lsh 3.0", T.text)
+        out("                                       Theme:   "..ActiveTheme, T.text)
+        out("                                       Procs:   "..cnt, T.text)
+        out("                                       RAM:     "..mem.."MB / 512MB", T.text)
+        out("                                       Player:  "..player.DisplayName, T.text)
+        out("                                       Game:    "..game.PlaceId, T.text)
+        out("", T.text)
+        -- Цветовая палитра
+        local colors = "        "
+        out(colors.."███ ███ ███ ███ ███ ███ ███ ███", T.accent)
+        out("", T.text)
+
+    elseif cc=="fortune" then
+        out("🔮  "..Fortunes[math.random(#Fortunes)], T.yellow)
+
+    elseif cc=="history" then
+        out("  История команд:", T.accent)
+        for i, cmd2 in ipairs(cmdHistory) do
+            out(string.format("  %4d  %s", i, cmd2), T.text)
+        end
+
+    elseif cc=="tree" then
+        local path = args[2] and fsResolve(args[2]) or CWD
+        local function printTree(p, prefix)
+            local nd = FS[p]
+            if not nd or nd.t ~= "dir" then return end
+            local ch = nd.children
+            for i, cp in ipairs(ch) do
+                local child = FS[cp]
+                if not child then continue end
+                local segs = cp:split("/")
+                local nm = segs[#segs]
+                local isLast = (i == #ch)
+                local connector = isLast and "└── " or "├── "
+                local icon = child.t == "dir" and "📁 " or "📄 "
+                out(prefix .. connector .. icon .. nm, child.t == "dir" and T.accent2 or T.text)
+                if child.t == "dir" then
+                    local newPrefix = prefix .. (isLast and "    " or "│   ")
+                    printTree(cp, newPrefix)
+                end
+            end
+        end
+        local segs = path:split("/")
+        out("📂 " .. (segs[#segs] ~= "" and segs[#segs] or "/"), T.accent)
+        printTree(path, "")
+
+    elseif cc=="mkdir" then
+        if not args[2] then out("mkdir: укажи имя папки", T.yellow); return end
+        local ok, err = fsMkdir(args[2])
+        if ok then
+            out("Создана папка: "..fsResolve(args[2]), T.textDim)
+        else
+            out("mkdir: "..tostring(err), T.red)
+        end
+
+    elseif cc=="mv" then
+        if not args[2] or not args[3] then out("mv: укажи источник и цель", T.yellow); return end
+        local src = fsResolve(args[2])
+        local dst = fsResolve(args[3])
+        if not FS[src] then out("mv: "..args[2]..": не найден", T.red); return end
+        FS[dst] = FS[src]
+        FS[dst].time = os.time()
+        FS[src] = nil
+        -- Обновить родителей
+        for _, nd in pairs(FS) do
+            if nd.t == "dir" then
+                for i, ch in ipairs(nd.children) do
+                    if ch == src then nd.children[i] = dst; break end
+                end
+            end
+        end
+        out("Перемещено: "..src.." → "..dst, T.textDim)
+
+    elseif cc=="cp" then
+        if not args[2] or not args[3] then out("cp: укажи источник и цель", T.yellow); return end
+        local src = fsResolve(args[2])
+        local dst = fsResolve(args[3])
+        if not FS[src] or FS[src].t ~= "file" then out("cp: "..args[2]..": файл не найден", T.red); return end
+        fsWrite(dst, FS[src].content)
+        out("Скопировано: "..src.." → "..dst, T.textDim)
+
+    elseif cc=="grep" then
+        if not args[2] or not args[3] then out("grep: использование: grep [слово] [файл]", T.yellow); return end
+        local pattern = args[2]
+        local content = fsRead(fsResolve(args[3]))
+        if not content then out("grep: "..args[3]..": файл не найден", T.red); return end
+        local found = 0
+        for _, ln in ipairs(content:split("\n")) do
+            if ln:lower():find(pattern:lower()) then
+                out(ln, T.green)
+                found += 1
+            end
+        end
+        if found == 0 then out("(совпадений не найдено)", T.textDim) end
+
+    elseif cc=="head" then
+        if not args[2] then out("head: укажи файл", T.yellow); return end
+        local content = fsRead(fsResolve(args[2]))
+        if not content then out("head: файл не найден", T.red); return end
+        local lines = content:split("\n")
+        local count = tonumber(args[3]) or 5
+        for i = 1, math.min(count, #lines) do
+            out(lines[i], T.text)
+        end
+
+    elseif cc=="tail" then
+        if not args[2] then out("tail: укажи файл", T.yellow); return end
+        local content = fsRead(fsResolve(args[2]))
+        if not content then out("tail: файл не найден", T.red); return end
+        local lines = content:split("\n")
+        local count = tonumber(args[3]) or 5
+        for i = math.max(1, #lines - count + 1), #lines do
+            out(lines[i], T.text)
+        end
+
+    elseif cc=="wc" then
+        if not args[2] then out("wc: укажи файл", T.yellow); return end
+        local content = fsRead(fsResolve(args[2]))
+        if not content then out("wc: файл не найден", T.red); return end
+        local lines = #content:split("\n")
+        local words = 0
+        for _ in content:gmatch("%S+") do words += 1 end
+        local bytes = #content
+        out(string.format("  %d строк  %d слов  %d байт  %s", lines, words, bytes, args[2]), T.text)
+
+    elseif cc=="ls" then
+        local path = args[2] and fsResolve(args[2]) or CWD
+        local ch = fsList(path)
+        if not ch then out("ls: "..path..": нет такого пути", T.red); return end
+        if #ch==0 then out("(пусто)", T.textDim); return end
+        out("  " .. path .. ":", T.accent)
+        for _, cp in ipairs(ch) do
+            local nd=FS[cp]
+            if nd then
+                local segs=cp:split("/")
+                local nm=segs[#segs]
+                if nd.t=="dir" then
+                    out("  📁  "..nm.."/", T.accent2)
+                else
+                    out(string.format("  📄  %-26s %dB", nm, #nd.content), T.text)
+                end
+            end
+        end
+
+    elseif cc=="cd" then
+        local p = args[2] and fsResolve(args[2]) or "/home/player"
+        if FS[p] and FS[p].t=="dir" then
+            CWD=p; out("→ "..CWD, T.textDim)
+        else
+            out("cd: "..tostring(args[2])..": нет такой директории", T.red)
+        end
+
+    elseif cc=="pwd" then
+        out(CWD, T.text)
+
+    elseif cc=="cat" then
+        if not args[2] then out("cat: укажи файл", T.yellow); return end
+        local content=fsRead(fsResolve(args[2]))
+        if content then
+            for _,ln in ipairs(content:split("\n")) do out(ln, T.text) end
+        else
+            out("cat: "..args[2]..": файл не найден", T.red)
+        end
+
+    elseif cc=="echo" then
+        local full=table.concat(args," ",2)
+        local lpart, rpart=full:match("^(.-)%s*>%s*(.+)$")
+        if lpart and rpart then
+            fsWrite(fsResolve(rpart), lpart.."\n")
+            out("Записано → "..rpart, T.textDim)
+        else
+            out(full, T.text)
+        end
+
+    elseif cc=="touch" then
+        if not args[2] then out("touch: укажи имя файла", T.yellow); return end
+        local abs=fsResolve(args[2])
+        if not FS[abs] then
+            fsWrite(abs,""); out("Создан: "..abs, T.textDim)
+        else
+            out("Файл уже существует", T.textDim)
+        end
+
+    elseif cc=="rm" then
+        if not args[2] then out("rm: укажи файл", T.yellow); return end
+        local abs=fsResolve(args[2])
+        if not FS[abs] then out("rm: файл не найден", T.red); return end
+        if FS[abs].t=="dir" then out("rm: это директория (используй rm -r)", T.red); return end
+        FS[abs]=nil
+        for _, nd in pairs(FS) do
+            if nd.t=="dir" then
+                for i,ch in ipairs(nd.children) do
+                    if ch==abs then table.remove(nd.children,i); break end
+                end
+            end
+        end
+        out("Удалён: "..abs, T.textDim)
+
+    elseif cc=="ps" then
+        out(string.format("  %-5s  %-22s  %-10s  %s","PID","ИМЯ","СТАТУС","RAM"), T.accent)
+        out("  "..("─"):rep(52), T.textMut)
+        local sorted={}
+        for _,p in pairs(Kernel.procs) do table.insert(sorted,p) end
+        table.sort(sorted,function(a,b) return a.pid<b.pid end)
+        for _,p in ipairs(sorted) do
+            out(string.format("  %-5s  %-22s  %-10s  %dMB",
+                p.pid, p.name, p.state, p.mem), p.state=="running" and T.green or T.textDim)
+        end
+
+    elseif cc=="kill" then
+        local pid=tonumber(args[2])
+        if not pid then out("kill: укажи PID", T.yellow); return end
+        local ok, err=kkill(pid)
+        if ok then out("Процесс "..pid.." завершён ✓", T.green)
+        else out("kill: "..tostring(err), T.red) end
+
+    elseif cc=="top" then
+        local total=512; local used=0; local cnt=0
+        for _,p in pairs(Kernel.procs) do used+=p.mem; cnt+=1 end
+        local pct=math.floor(used/total*100)
+        local up=os.clock()-Kernel.boot
+        out("── Системная нагрузка ──────────────────", T.accent)
+        out(string.format("  Аптайм:    %.0f сек", up), T.text)
+        out(string.format("  Процессов: %d", cnt), T.text)
+        out(string.format("  RAM:       %d / %d MB (%d%%)", used, total, pct), T.text)
+        local bar=("█"):rep(math.floor(pct/5))..("░"):rep(20-math.floor(pct/5))
+        out("  ["..bar.."]", pct>80 and T.red or pct>50 and T.yellow or T.green)
+
+    elseif cc=="mem" then
+        local total=512; local used=0
+        for _,p in pairs(Kernel.procs) do used+=p.mem end
+        local pct=math.floor(used/total*100)
+        out(string.format("RAM: %dMB / %dMB  (%d%% занято)", used, total, pct), T.text)
+        out("["..("█"):rep(math.floor(pct/5))..("░"):rep(20-math.floor(pct/5)).."]", pct>80 and T.red or T.accent)
+
+    elseif cc=="uptime" then
+        local up=os.clock()-Kernel.boot
+        out(string.format("Аптайм: %02d:%02d:%02d", math.floor(up/3600), math.floor(up%3600/60), math.floor(up%60)), T.text)
+
+    elseif cc=="date" then
+        out(os.date("Дата: %d.%m.%Y   Время: %H:%M:%S"), T.text)
+
+    elseif cc=="whoami" then out(player.Name, T.text)
+    elseif cc=="hostname" then out(fsRead("/etc/hostname") or "luaos", T.text)
+    elseif cc=="uname" then out("LuaOS 3.0.0 Aurora (Luau/"..os.date("%Y")..") enhanced-edition", T.text)
+    elseif cc=="clear" then return "clear"
+    elseif cc=="exit" then return "exit"
+    else
+        out("lsh: "..cc..": команда не найдена. Напиши 'help'", T.red)
+    end
+end
+
+-- ── FORWARD DECLARATIONS ──────────────────────────────────────
+local openTerminal, openNotepad, openTaskManager, openBrowser, openFiles
+local openCalc, openSettings, openSysMonitor
+
+-- ── ТЕРМИНАЛ ───────────────────────────────────────────────────
+openTerminal = function()
+    if WINS["Терминал"] and WINS["Терминал"].Parent then
+        WINS["Терминал"].Visible=true; return
+    end
+
+    local win,body,z = newWindow("  ⌨  Терминал", 650, 460, 100, 60)
+
+    local tbg = c("Frame", {
+        Size=UDim2.new(1,0,1,0),
+        BackgroundColor3=T.term,
+        BorderSizePixel=0, ZIndex=z+1,
+    }, body)
+
+    local outScroll = c("ScrollingFrame", {
+        Size=UDim2.new(1,0,1,-44),
+        BackgroundTransparency=1, BorderSizePixel=0,
+        ScrollBarThickness=3, ScrollBarImageColor3=T.accent,
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        CanvasSize=UDim2.new(0,0,0,0), ZIndex=z+2,
+    }, tbg)
+    c("UIListLayout", {Padding=UDim.new(0,1)}, outScroll)
+    pad(outScroll, 10)
+
+    local function addOut(txt, col)
+        local lbl = c("TextLabel", {
+            Size=UDim2.new(1,0,0,0),
+            AutomaticSize=Enum.AutomaticSize.Y,
+            BackgroundTransparency=1, Text=txt,
+            Font=Enum.Font.Code, TextSize=13,
+            TextColor3=col or T.termTxt,
+            TextXAlignment=Enum.TextXAlignment.Left,
+            TextWrapped=true, ZIndex=z+3,
+        }, outScroll)
+        task.defer(function()
+            outScroll.CanvasPosition=Vector2.new(0,outScroll.AbsoluteCanvasSize.Y)
+        end)
+        return lbl
+    end
+
+    local inputRow = c("Frame", {
+        Size=UDim2.new(1,0,0,40), Position=UDim2.new(0,0,1,-40),
+        BackgroundColor3=Color3.fromRGB(10,12,24),
+        BorderSizePixel=0, ZIndex=z+2,
+    }, tbg)
+
+    c("Frame", {
+        Size=UDim2.new(1,0,0,1),
+        BackgroundColor3=T.accent, BackgroundTransparency=0.7,
+        BorderSizePixel=0, ZIndex=z+3,
+    }, inputRow)
+
+    local promptLbl = c("TextLabel", {
+        Size=UDim2.new(0,0,1,0), AutomaticSize=Enum.AutomaticSize.X,
+        Position=UDim2.new(0,10,0,0), BackgroundTransparency=1,
+        Text=player.Name.."@luaos:"..CWD.."$ ",
+        Font=Enum.Font.Code, TextSize=13, TextColor3=T.accent2, ZIndex=z+3,
+    }, inputRow)
+
+    local inputBox = c("TextBox", {
+        Size=UDim2.new(1,-200,1,-8), Position=UDim2.new(0,180,0,4),
+        BackgroundTransparency=1, Text="", PlaceholderText="введи команду...",
+        PlaceholderColor3=T.textMut, Font=Enum.Font.Code, TextSize=13,
+        TextColor3=T.termTxt, TextXAlignment=Enum.TextXAlignment.Left,
+        ClearTextOnFocus=false, ZIndex=z+3,
+    }, inputRow)
+
+    addOut("╔══════════════════════════════════════════════╗", T.accent)
+    addOut("║        LuaOS Terminal v3.0 Aurora            ║", T.accent)
+    addOut("║   Ядро: Luau   Платформа: Roblox             ║", T.textDim)
+    addOut("║   Новое: neofetch, tree, grep, mkdir, fortune║", T.textDim)
+    addOut("╚══════════════════════════════════════════════╝", T.accent)
+    addOut("", T.text)
+    addOut(fsRead("/etc/motd") or "", T.text)
+
+    local hist={}; local hidx=0
+
+    inputBox.FocusLost:Connect(function(enter)
+        if not enter then return end
+        local cmd2=inputBox.Text; inputBox.Text=""
+        if cmd2=="" then return end
+        table.insert(hist,cmd2); hidx=#hist+1
+        addOut(player.Name.."@luaos:"..CWD.."$ "..cmd2, T.textDim)
+        local r=runCmd(cmd2, addOut)
+        if r=="clear" then
+            for _,ch in ipairs(outScroll:GetChildren()) do
+                if ch:IsA("TextLabel") then ch:Destroy() end
+            end
+        elseif r=="exit" then
+            win:Destroy(); WINS["Терминал"]=nil; OpenWinNames["Терминал"]=nil
+            if refreshTaskbar then refreshTaskbar() end
+        end
+        promptLbl.Text=player.Name.."@luaos:"..CWD.."$ "
+        task.defer(function() inputBox:CaptureFocus() end)
+    end)
+
+    UIS.InputBegan:Connect(function(i,gp)
+        if gp or not inputBox:IsFocused() then return end
+        if i.KeyCode==Enum.KeyCode.Up then
+            hidx=math.max(1,hidx-1); inputBox.Text=hist[hidx] or ""
+        elseif i.KeyCode==Enum.KeyCode.Down then
+            hidx=math.min(#hist+1,hidx+1); inputBox.Text=hist[hidx] or ""
+        end
+    end)
+
+    task.defer(function() inputBox:CaptureFocus() end)
+    kspawn("lsh", 3)
+end
+
+-- ── БЛОКНОТ ────────────────────────────────────────────────────
+openNotepad = function()
+    if WINS["Блокнот"] and WINS["Блокнот"].Parent then WINS["Блокнот"].Visible=true; return end
+
+    local win,body,z = newWindow("  📝  Блокнот", 540, 420, 160, 90)
+    local curFile = "/home/player/readme.txt"
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.surface,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    local tb=c("Frame",{Size=UDim2.new(1,0,0,36),
+        BackgroundColor3=T.surface2,BorderSizePixel=0,ZIndex=z+2},bg)
+
+    local fileLbl=c("TextLabel",{
+        Size=UDim2.new(1,-200,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundTransparency=1,Text="📄 "..curFile,
+        Font=Enum.Font.Gotham,TextSize=11,TextColor3=T.textDim,
+        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+3},tb)
+
+    local saveBtn=c("TextButton",{
+        Size=UDim2.new(0,90,0,26), Position=UDim2.new(1,-100,0.5,-13),
+        BackgroundColor3=T.surface, Text="💾 Сохранить",TextColor3=T.text,
+        Font=Enum.Font.Gotham,TextSize=12, ZIndex=z+3,BorderSizePixel=0},tb)
+    corner(saveBtn,5); stroke(saveBtn,T.border,1,.5)
+    hover(saveBtn,T.surface,T.surface2)
+
+    local ta=c("TextBox",{
+        Size=UDim2.new(1,-16,1,-52), Position=UDim2.new(0,8,0,44),
+        BackgroundColor3=T.bg1, Text=fsRead(curFile) or "",
+        TextColor3=T.text, Font=Enum.Font.Code,TextSize=13,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Top,
+        MultiLine=true,ClearTextOnFocus=false,
+        TextWrapped=true,ZIndex=z+2,BorderSizePixel=0},bg)
+    corner(ta,6); pad(ta,8); stroke(ta,T.border,1,.5)
+
+    saveBtn.MouseButton1Click:Connect(function()
+        fsWrite(curFile, ta.Text)
+        fileLbl.Text="📄 "..curFile.."  ✓ Сохранено"
+        notify("Блокнот", "Файл сохранён: "..curFile, 3, "💾")
+        task.delay(2,function() fileLbl.Text="📄 "..curFile end)
+    end)
+end
+
+-- ── МЕНЕДЖЕР ЗАДАЧ ─────────────────────────────────────────────
+openTaskManager = function()
+    if WINS["Менеджер задач"] and WINS["Менеджер задач"].Parent then
+        WINS["Менеджер задач"].Visible=true; return
+    end
+
+    local win,body,z = newWindow("  📊  Менеджер задач", 520, 400, 200, 110)
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.surface,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    local hdr=c("Frame",{Size=UDim2.new(1,0,0,30),
+        BackgroundColor3=T.winTitle,BorderSizePixel=0,ZIndex=z+2},bg)
+    stroke(hdr, T.border, 1, .5)
+
+    local cols={
+        {t="PID", w=.10, x=0},
+        {t="Процесс",w=.38,x=.10},
+        {t="Статус",w=.22, x=.48},
+        {t="RAM", w=.15, x=.70},
+        {t="",   w=.15, x=.85},
+    }
+    for _,col in ipairs(cols) do
+        c("TextLabel",{
+            Size=UDim2.new(col.w,0,1,0), Position=UDim2.new(col.x,8,0,0),
+            BackgroundTransparency=1, Text=col.t,Font=Enum.Font.GothamBold,TextSize=12,
+            TextColor3=T.accent2,TextXAlignment=Enum.TextXAlignment.Left,
+            ZIndex=z+3},hdr)
+    end
+
+    local list=c("ScrollingFrame",{
+        Size=UDim2.new(1,0,1,-80), Position=UDim2.new(0,0,0,30),
+        BackgroundTransparency=1,BorderSizePixel=0,
+        ScrollBarThickness=3,ScrollBarImageColor3=T.accent,
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        CanvasSize=UDim2.new(0,0,0,0),ZIndex=z+2},bg)
+    c("UIListLayout",{Padding=UDim.new(0,2)},list)
+    pad(list,4)
+
+    local rows={}
+
+    local function refresh()
+        for _,r in ipairs(rows) do r:Destroy() end; rows={}
+        local sorted={}
+        for _,p in pairs(Kernel.procs) do table.insert(sorted,p) end
+        table.sort(sorted,function(a,b) return a.pid<b.pid end)
+
+        for i,p in ipairs(sorted) do
+            local row=c("Frame",{
+                Size=UDim2.new(1,0,0,30),
+                BackgroundColor3=i%2==0 and T.surface2 or T.surface,
+                BorderSizePixel=0,ZIndex=z+3},list)
+            corner(row,5)
+
+            local datas={tostring(p.pid), p.name, p.state, p.mem.."MB"}
+            for ci,col in ipairs(cols) do
+                if ci <= 4 then
+                    c("TextLabel",{
+                        Size=UDim2.new(col.w,0,1,0), Position=UDim2.new(col.x,8,0,0),
+                        BackgroundTransparency=1, Text=datas[ci],
+                        Font=Enum.Font.Code,TextSize=12,
+                        TextColor3=ci==3 and (p.state=="running" and T.green or T.textDim) or T.text,
+                        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+4},row)
+                end
+            end
+
+            -- Кнопка Kill
+            if not p.sys then
+                local kb=c("TextButton",{
+                    Size=UDim2.new(0,44,0,20), Position=UDim2.new(.85,4,0.5,-10),
+                    BackgroundColor3=T.red, Text="Kill",
+                    TextColor3=Color3.new(1,1,1), Font=Enum.Font.GothamBold,
+                    TextSize=10, ZIndex=z+4, BorderSizePixel=0},row)
+                corner(kb,4)
+                kb.MouseButton1Click:Connect(function()
+                    kkill(p.pid)
+                    notify("Менеджер задач", "Процесс "..p.name.." завершён", 3, "📊")
+                end)
+            end
+
+            table.insert(rows,row)
+        end
+    end
+
+    local statBar=c("Frame",{
+        Size=UDim2.new(1,0,0,46), Position=UDim2.new(0,0,1,-46),
+        BackgroundColor3=T.winTitle, BorderSizePixel=0,ZIndex=z+2},bg)
+
+    local statLbl=c("TextLabel",{
+        Size=UDim2.new(1,-16,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundTransparency=1,Text="",
+        Font=Enum.Font.Code,TextSize=11,TextColor3=T.textDim,
+        TextXAlignment=Enum.TextXAlignment.Left, RichText=true,ZIndex=z+3},statBar)
+
+    local ramBg=c("Frame",{
+        Size=UDim2.new(1,-16,0,4),Position=UDim2.new(0,8,0,38),
+        BackgroundColor3=T.surface,BorderSizePixel=0,ZIndex=z+2},statBar)
+    corner(ramBg,2)
+    local ramBar=c("Frame",{
+        Size=UDim2.new(0,0,0,4),Position=UDim2.new(0,8,0,38),
+        BackgroundColor3=T.accent,BorderSizePixel=0,ZIndex=z+3},statBar)
+    corner(ramBar,2)
+
+    local conn=RunService.Heartbeat:Connect(function()
+        local total=512; local used=0; local cnt=0
+        for _,p in pairs(Kernel.procs) do used+=p.mem; cnt+=1 end
+        local pct=math.floor(used/total*100)
+        statLbl.Text=string.format("Процессов: %d  │  RAM: %dMB/%dMB (%d%%)  │  ▲ %ds",
+            cnt, used, total, pct, math.floor(os.clock()-Kernel.boot))
+        tw(ramBar,{Size=UDim2.new(used/total,0,0,4)},.3)
+        ramBar.BackgroundColor3=pct>80 and T.red or pct>50 and T.yellow or T.accent
+    end)
+
+    task.spawn(function()
+        while win and win.Parent do refresh(); task.wait(0.5) end
+        conn:Disconnect()
+    end)
+    refresh()
+end
+
+-- ── БРАУЗЕР ────────────────────────────────────────────────────
+openBrowser = function()
+    if WINS["Браузер"] and WINS["Браузер"].Parent then WINS["Браузер"].Visible=true; return end
+
+    local win,body,z = newWindow("  🌐  LuaSearch Browser", 600, 440, 180, 80)
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),
+        BackgroundColor3=Color3.fromRGB(235,238,255),
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    local addrRow=c("Frame",{
+        Size=UDim2.new(1,-16,0,36), Position=UDim2.new(0,8,0,6),
+        BackgroundColor3=Color3.new(1,1,1),
+        BorderSizePixel=0,ZIndex=z+2},bg)
+    corner(addrRow,18); stroke(addrRow,T.accent,1,.3)
+
+    local addrBox=c("TextBox",{
+        Size=UDim2.new(1,-24,1,0),Position=UDim2.new(0,12,0,0),
+        BackgroundTransparency=1, Text="luaos://home",
+        Font=Enum.Font.Gotham,TextSize=13,
+        TextColor3=Color3.fromRGB(30,40,80),
+        ClearTextOnFocus=false,ZIndex=z+3},addrRow)
+
+    local page=c("ScrollingFrame",{
+        Size=UDim2.new(1,-16,1,-54), Position=UDim2.new(0,8,0,48),
+        BackgroundColor3=Color3.new(1,1,1), BorderSizePixel=0,
+        ScrollBarThickness=4, AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        CanvasSize=UDim2.new(0,0,0,0),ZIndex=z+2},bg)
+    corner(page,8); stroke(page,T.border,1,.5)
+    c("UIListLayout",{Padding=UDim.new(0,6)},page)
+    pad(page,14)
+
+    local pages={
+        ["luaos://home"]={
+            {h=1, t="🏠 LuaOS Browser v3.0"},
+            {h=0, t="Добро пожаловать во встроенный браузер LuaOS!"},
+            {h=2, t="Страницы:"},
+            {lnk="luaos://about"}, {lnk="luaos://docs"},
+            {lnk="luaos://filesystem"}, {lnk="luaos://changelog"},
+            {lnk="luaos://games"},
+        },
+        ["luaos://about"]={
+            {h=1, t="ℹ️ О системе LuaOS"},
+            {h=0, t="Версия:    LuaOS 3.0.0 Aurora"},
+            {h=0, t="Ядро:      Luau (Roblox Runtime)"},
+            {h=0, t="Билд:      Enhanced Edition"},
+            {h=0, t="Кодовое имя: Aurora"},
+            {h=0, t="Запущено:  "..os.date("%H:%M:%S %d.%m.%Y")},
+            {h=0, t="Игрок:     "..player.Name.." ("..player.DisplayName..")"},
+            {h=0, t="UserID:    "..player.UserId},
+            {lnk="luaos://home"},
+        },
+        ["luaos://docs"]={
+            {h=1, t="📚 Документация"},
+            {h=2, t="Терминал — все команды:"},
+            {h=0, t="  help, ls, cd, cat, head, tail, echo, touch, mkdir"},
+            {h=0, t="  rm, mv, cp, wc, grep, tree, pwd"},
+            {h=0, t="  ps, kill, top, mem, uptime, date"},
+            {h=0, t="  whoami, hostname, uname, neofetch"},
+            {h=0, t="  history, fortune, clear, exit"},
+            {h=2, t="Приложения:"},
+            {h=0, t="  Терминал, Блокнот, Менеджер задач"},
+            {h=0, t="  Браузер, Файлы, Калькулятор"},
+            {h=0, t="  Настройки, Системный монитор"},
+            {lnk="luaos://home"},
+        },
+        ["luaos://filesystem"]={
+            {h=1, t="📁 Файловая система"},
+            {h=0, t="  /bin            — системные утилиты"},
+            {h=0, t="  /etc            — конфигурация"},
+            {h=0, t="  /home/player    — твоя папка"},
+            {h=0, t="  /home/player/Documents — документы"},
+            {h=0, t="  /home/player/Music     — музыка"},
+            {h=0, t="  /tmp            — временные файлы"},
+            {h=0, t="  /var/log        — логи"},
+            {lnk="luaos://home"},
+        },
+        ["luaos://changelog"]={
+            {h=1, t="📋 Changelog"},
+            {h=2, t="v3.0.0 Aurora:"},
+            {h=0, t="  + 3 темы: Dark, Hacker, Sakura"},
+            {h=0, t="  + Калькулятор"},
+            {h=0, t="  + Системный монитор"},
+            {h=0, t="  + Система уведомлений (тосты)"},
+            {h=0, t="  + Кнопка развернуть окно на весь экран"},
+            {h=0, t="  + Таскбар показывает открытые окна"},
+            {h=0, t="  + 12 новых команд терминала"},
+            {h=0, t="  + neofetch с ASCII-артом"},
+            {h=0, t="  + tree — дерево файлов"},
+            {h=0, t="  + grep, head, tail, wc, mkdir, mv, cp"},
+            {h=0, t="  + fortune — случайные цитаты"},
+            {h=0, t="  + history — история команд"},
+            {h=0, t="  + Кнопки Kill в менеджере задач"},
+            {h=2, t="v2.0.0:"},
+            {h=0, t="  + Первый релиз"},
+            {lnk="luaos://home"},
+        },
+        ["luaos://games"]={
+            {h=1, t="🎮 Мини-игры"},
+            {h=0, t="Скоро! В следующей версии появятся:"},
+            {h=0, t="  • Угадай число"},
+            {h=0, t="  • Крестики-нолики"},
+            {h=0, t="  • Змейка"},
+            {lnk="luaos://home"},
+        },
+    }
+
+    local function render(url)
+        for _,ch in ipairs(page:GetChildren()) do
+            if ch:IsA("GuiObject") then ch:Destroy() end
+        end
+        local pg=pages[url]
+        if not pg then
+            c("TextLabel",{Size=UDim2.new(1,0,0,40),BackgroundTransparency=1,
+                Text="404 — Страница не найдена",
+                Font=Enum.Font.GothamBold,TextSize=16,
+                TextColor3=Color3.fromRGB(200,40,40),
+                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+3},page)
+            return
+        end
+        for _,item in ipairs(pg) do
+            if item.lnk then
+                local b=c("TextButton",{
+                    Size=UDim2.new(1,0,0,28),
+                    BackgroundColor3=Color3.fromRGB(230,238,255),
+                    Text="🔗  "..item.lnk,
+                    Font=Enum.Font.Gotham,TextSize=13,
+                    TextColor3=Color3.fromRGB(20,80,220),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    BorderSizePixel=0,ZIndex=z+3},page)
+                corner(b,5); pad(b,6)
+                b.MouseButton1Click:Connect(function() addrBox.Text=item.lnk; render(item.lnk) end)
+            elseif item.h==1 then
+                c("TextLabel",{Size=UDim2.new(1,0,0,0),AutomaticSize=Enum.AutomaticSize.Y,
+                    BackgroundTransparency=1,Text=item.t,
+                    Font=Enum.Font.GothamBold,TextSize=22,
+                    TextColor3=Color3.fromRGB(20,60,180),
+                    TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true,ZIndex=z+3},page)
+            elseif item.h==2 then
+                c("TextLabel",{Size=UDim2.new(1,0,0,0),AutomaticSize=Enum.AutomaticSize.Y,
+                    BackgroundTransparency=1,Text=item.t,
+                    Font=Enum.Font.GothamBold,TextSize=15,
+                    TextColor3=Color3.fromRGB(50,100,200),
+                    TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+3},page)
+            else
+                c("TextLabel",{Size=UDim2.new(1,0,0,0),AutomaticSize=Enum.AutomaticSize.Y,
+                    BackgroundTransparency=1,Text=item.t,
+                    Font=Enum.Font.Code,TextSize=13,
+                    TextColor3=Color3.fromRGB(30,40,70),
+                    TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true,ZIndex=z+3},page)
+            end
+        end
+    end
+    render("luaos://home")
+    addrBox.FocusLost:Connect(function(e) if e then render(addrBox.Text) end end)
+end
+
+-- ── ФАЙЛОВЫЙ МЕНЕДЖЕР ──────────────────────────────────────────
+openFiles = function()
+    if WINS["Файлы"] and WINS["Файлы"].Parent then WINS["Файлы"].Visible=true; return end
+
+    local win,body,z = newWindow("  📁  Файловый менеджер", 500, 420, 220, 100)
+    local viewPath="/"
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.surface,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    local bread=c("Frame",{Size=UDim2.new(1,0,0,34),
+        BackgroundColor3=T.surface2,BorderSizePixel=0,ZIndex=z+2},bg)
+
+    local pathLbl=c("TextLabel",{
+        Size=UDim2.new(1,-8,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundTransparency=1, Text="📂 /",
+        Font=Enum.Font.Gotham,TextSize=12,TextColor3=T.text,
+        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+3},bread)
+
+    local flist=c("ScrollingFrame",{
+        Size=UDim2.new(1,-16,1,-50), Position=UDim2.new(0,8,0,40),
+        BackgroundTransparency=1,BorderSizePixel=0,
+        ScrollBarThickness=3,ScrollBarImageColor3=T.accent,
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        CanvasSize=UDim2.new(0,0,0,0),ZIndex=z+2},bg)
+    c("UIListLayout",{Padding=UDim.new(0,3)},flist)
+
+    local function renderDir(path)
+        viewPath=path; pathLbl.Text="📂 "..path
+        for _,ch in ipairs(flist:GetChildren()) do
+            if ch:IsA("GuiObject") then ch:Destroy() end
+        end
+
+        if path~="/" then
+            local segs=path:split("/"); table.remove(segs)
+            local par=table.concat(segs,"/"); if par=="" then par="/" end
+            local upb=c("TextButton",{Size=UDim2.new(1,0,0,34),
+                BackgroundColor3=T.surface2, Text="",BorderSizePixel=0,ZIndex=z+3},flist)
+            corner(upb,6)
+            c("TextLabel",{Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,10,0,0),
+                BackgroundTransparency=1, Text="⬆   ..",
+                Font=Enum.Font.Gotham,TextSize=13,TextColor3=T.accent2,
+                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+4},upb)
+            hover(upb,T.surface2,T.surface)
+            upb.MouseButton1Click:Connect(function() renderDir(par) end)
+        end
+
+        local nd=FS[path]
+        if not nd then return end
+        for _,cp in ipairs(nd.children) do
+            local child=FS[cp]
+            if not child then continue end
+            local segs=cp:split("/"); local nm=segs[#segs]
+            local isDir=child.t=="dir"
+
+            local row=c("TextButton",{Size=UDim2.new(1,0,0,34),
+                BackgroundColor3=T.surface, Text="",BorderSizePixel=0,ZIndex=z+3},flist)
+            corner(row,6); stroke(row,T.border,1,.6)
+            hover(row,T.surface,T.surface2)
+
+            c("TextLabel",{Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,10,0,0),
+                BackgroundTransparency=1,
+                Text=(isDir and "📁  " or "📄  ")..nm,
+                Font=Enum.Font.Gotham,TextSize=13,
+                TextColor3=isDir and T.accent2 or T.text,
+                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=z+4},row)
+
+            if not isDir then
+                c("TextLabel",{Size=UDim2.new(0,60,1,0),Position=UDim2.new(1,-65,0,0),
+                    BackgroundTransparency=1, Text=#child.content.."B",
+                    Font=Enum.Font.Code,TextSize=11,TextColor3=T.textMut, ZIndex=z+4},row)
+            end
+
+            row.MouseButton1Click:Connect(function()
+                if isDir then renderDir(cp) end
+            end)
+        end
+    end
+    renderDir("/")
+end
+
+-- ── КАЛЬКУЛЯТОР (НОВОЕ) ───────────────────────────────────────
+openCalc = function()
+    if WINS["Калькулятор"] and WINS["Калькулятор"].Parent then
+        WINS["Калькулятор"].Visible=true; return
+    end
+
+    local win,body,z = newWindow("  🧮  Калькулятор", 280, 400, 300, 100)
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.bg1,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    -- Дисплей
+    local display=c("TextLabel",{
+        Size=UDim2.new(1,-16,0,70), Position=UDim2.new(0,8,0,8),
+        BackgroundColor3=T.surface, Text="0",
+        Font=Enum.Font.Code, TextSize=32, TextColor3=T.text,
+        TextXAlignment=Enum.TextXAlignment.Right,
+        ZIndex=z+2, BorderSizePixel=0},bg)
+    corner(display,8); pad(display,12)
+
+    local expr = ""
+    local lastResult = ""
+
+    local function updateDisplay()
+        display.Text = (expr == "" and "0") or expr
+    end
+
+    local buttons = {
+        {"C", "⌫", "%", "÷"},
+        {"7", "8", "9", "×"},
+        {"4", "5", "6", "-"},
+        {"1", "2", "3", "+"},
+        {"±", "0", ".", "="},
+    }
+
+    local grid = c("Frame",{
+        Size=UDim2.new(1,-16,1,-96), Position=UDim2.new(0,8,0,86),
+        BackgroundTransparency=1, ZIndex=z+1},bg)
+
+    for ri, row in ipairs(buttons) do
+        for ci, label in ipairs(row) do
+            local isOp = (label == "÷" or label == "×" or label == "-" or label == "+" or label == "=")
+            local isSpecial = (label == "C" or label == "⌫" or label == "%" or label == "±")
+
+            local btnColor = isOp and T.accent or isSpecial and T.surface2 or T.surface
+            local txtColor = isOp and Color3.new(1,1,1) or T.text
+
+            local btn = c("TextButton",{
+                Size = UDim2.new(0.25, -6, 0.2, -6),
+                Position = UDim2.new((ci-1)*0.25, 3, (ri-1)*0.2, 3),
+                BackgroundColor3 = btnColor,
+                Text = label,
+                Font = Enum.Font.GothamBold,
+                TextSize = 20,
+                TextColor3 = txtColor,
+                ZIndex = z+2,
+                BorderSizePixel = 0,
+            }, grid)
+            corner(btn, 8)
+
+            btn.MouseButton1Click:Connect(function()
+                if label == "C" then
+                    expr = ""; updateDisplay()
+                elseif label == "⌫" then
+                    expr = expr:sub(1, -2); updateDisplay()
+                elseif label == "±" then
+                    if expr:sub(1,1) == "-" then
+                        expr = expr:sub(2)
+                    else
+                        expr = "-" .. expr
+                    end
+                    updateDisplay()
+                elseif label == "=" then
+                    local eval = expr:gsub("×","*"):gsub("÷","/")
+                    local fn = loadstring("return " .. eval)
+                    if fn then
+                        local ok, result = pcall(fn)
+                        if ok then
+                            lastResult = tostring(result)
+                            display.Text = lastResult
+                            expr = lastResult
+                        else
+                            display.Text = "Ошибка"
+                            expr = ""
+                        end
+                    else
+                        display.Text = "Ошибка"
+                        expr = ""
+                    end
+                else
+                    expr = expr .. label
+                    updateDisplay()
+                end
+            end)
+        end
+    end
+    kspawn("calc", 2)
+end
+
+-- ── НАСТРОЙКИ (НОВОЕ) ─────────────────────────────────────────
+openSettings = function()
+    if WINS["Настройки"] and WINS["Настройки"].Parent then
+        WINS["Настройки"].Visible=true; return
+    end
+
+    local win,body,z = newWindow("  ⚙  Настройки", 420, 380, 250, 100)
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.surface,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    c("TextLabel",{
+        Size=UDim2.new(1,-16,0,30), Position=UDim2.new(0,8,0,10),
+        BackgroundTransparency=1, Text="🎨 Выбери тему оформления",
+        Font=Enum.Font.GothamBold, TextSize=16, TextColor3=T.text,
+        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+2},bg)
+
+    local themeList = c("Frame",{
+        Size=UDim2.new(1,-16,0,280), Position=UDim2.new(0,8,0,48),
+        BackgroundTransparency=1, ZIndex=z+1},bg)
+    c("UIListLayout",{Padding=UDim.new(0,8)},themeList)
+
+    local themeData = {
+        {name="Dark", desc="Классическая тёмная тема", icon="🌙", preview={Color3.fromRGB(8,10,22), Color3.fromRGB(88,130,255)}},
+        {name="Hacker", desc="Матрица. Зелёный код.", icon="💻", preview={Color3.fromRGB(2,4,2), Color3.fromRGB(0,255,65)}},
+        {name="Sakura", desc="Нежная розовая тема", icon="🌸", preview={Color3.fromRGB(25,10,18), Color3.fromRGB(255,100,160)}},
+    }
+
+    for _, td in ipairs(themeData) do
+        local row = c("Frame",{
+            Size=UDim2.new(1,0,0,75),
+            BackgroundColor3=T.surface2,
+            BorderSizePixel=0, ZIndex=z+2},themeList)
+        corner(row,10); stroke(row, T.border, 1, .4)
+
+        -- Цветной превью
+        local preview = c("Frame",{
+            Size=UDim2.new(0,50,0,50), Position=UDim2.new(0,12,0.5,-25),
+            BackgroundColor3=td.preview[1], BorderSizePixel=0, ZIndex=z+3},row)
+        corner(preview,8); stroke(preview, td.preview[2], 2, 0)
+
+        c("TextLabel",{
+            Size=UDim2.new(0,30,0,30), Position=UDim2.new(0,10,0,10),
+            BackgroundTransparency=1, Text=td.icon,
+            TextSize=24, ZIndex=z+4},preview)
+
+        c("TextLabel",{
+            Size=UDim2.new(1,-160,0,22), Position=UDim2.new(0,74,0,12),
+            BackgroundTransparency=1, Text=td.name,
+            Font=Enum.Font.GothamBold, TextSize=16, TextColor3=T.text,
+            TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+3},row)
+
+        c("TextLabel",{
+            Size=UDim2.new(1,-160,0,18), Position=UDim2.new(0,74,0,36),
+            BackgroundTransparency=1, Text=td.desc,
+            Font=Enum.Font.Gotham, TextSize=12, TextColor3=T.textDim,
+            TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+3},row)
+
+        local active = (ActiveTheme == td.name)
+        local applyBtn = c("TextButton",{
+            Size=UDim2.new(0,80,0,30), Position=UDim2.new(1,-92,0.5,-15),
+            BackgroundColor3=active and T.green or T.accentDk,
+            Text=active and "✓ Активна" or "Применить",
+            TextColor3=Color3.new(1,1,1),
+            Font=Enum.Font.GothamBold, TextSize=12,
+            ZIndex=z+3, BorderSizePixel=0},row)
+        corner(applyBtn,6)
+
+        applyBtn.MouseButton1Click:Connect(function()
+            if Themes[td.name] then
+                ActiveTheme = td.name
+                T = Themes[td.name]
+                notify("Настройки", "Тема '"..td.name.."' применена!\nПерезапусти скрипт для полного эффекта.", 5, "🎨")
+            end
+        end)
+    end
+end
+
+-- ── СИСТЕМНЫЙ МОНИТОР (НОВОЕ) ─────────────────────────────────
+openSysMonitor = function()
+    if WINS["Монитор"] and WINS["Монитор"].Parent then
+        WINS["Монитор"].Visible=true; return
+    end
+
+    local win,body,z = newWindow("  📈  Системный монитор", 380, 340, 280, 120)
+
+    local bg=c("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.surface,
+        BorderSizePixel=0,ZIndex=z+1},body)
+
+    local labels = {}
+    local info = {
+        {lbl="ОС:", key="os"},
+        {lbl="Версия:", key="ver"},
+        {lbl="Ядро:", key="kern"},
+        {lbl="Аптайм:", key="up"},
+        {lbl="Процессов:", key="procs"},
+        {lbl="RAM:", key="ram"},
+        {lbl="Игрок:", key="player"},
+        {lbl="Display:", key="display"},
+        {lbl="Game ID:", key="game"},
+        {lbl="FPS:", key="fps"},
+    }
+
+    for i, item in ipairs(info) do
+        c("TextLabel",{
+            Size=UDim2.new(0,100,0,24), Position=UDim2.new(0,12,0,10+(i-1)*28),
+            BackgroundTransparency=1, Text=item.lbl,
+            Font=Enum.Font.GothamBold, TextSize=13, TextColor3=T.accent2,
+            TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+2},bg)
+
+        labels[item.key] = c("TextLabel",{
+            Size=UDim2.new(1,-130,0,24), Position=UDim2.new(0,115,0,10+(i-1)*28),
+            BackgroundTransparency=1, Text="...",
+            Font=Enum.Font.Code, TextSize=13, TextColor3=T.text,
+            TextXAlignment=Enum.TextXAlignment.Left, ZIndex=z+2},bg)
+    end
+
+    local lastTick = os.clock()
+    local fps = 60
+
+    local conn = RunService.Heartbeat:Connect(function(dt)
+        fps = math.floor(1/dt)
+    end)
+
+    task.spawn(function()
+        while win and win.Parent do
+            local up = os.clock()-Kernel.boot
+            local cnt=0; local mem=0
+            for _,p in pairs(Kernel.procs) do cnt+=1; mem+=p.mem end
+
+            labels.os.Text = "LuaOS 3.0.0 Aurora"
+            labels.ver.Text = "3.0.0 Enhanced"
+            labels.kern.Text = "Luau (Roblox Runtime)"
+            labels.up.Text = string.format("%02d:%02d:%02d", math.floor(up/3600), math.floor(up%3600/60), math.floor(up%60))
+            labels.procs.Text = tostring(cnt)
+            labels.ram.Text = string.format("%dMB / 512MB (%d%%)", mem, math.floor(mem/512*100))
+            labels.player.Text = player.DisplayName.." (@"..player.Name..")"
+            labels.display.Text = player.DisplayName
+            labels.game.Text = tostring(game.PlaceId)
+            labels.fps.Text = tostring(fps).." FPS"
+
+            task.wait(0.5)
+        end
+        conn:Disconnect()
+    end)
+end
+
+-- ── ИКОНКИ РАБОЧЕГО СТОЛА ──────────────────────────────────────
+local ICONS={
+    {lbl="Терминал",  ico="⌨",  fn=openTerminal,    pos=UDim2.new(0,18,0,18)},
+    {lbl="Блокнот",   ico="📝", fn=openNotepad,     pos=UDim2.new(0,18,0,112)},
+    {lbl="Задачи",    ico="📊", fn=openTaskManager,  pos=UDim2.new(0,18,0,206)},
+    {lbl="Браузер",   ico="🌐", fn=openBrowser,      pos=UDim2.new(0,18,0,300)},
+    {lbl="Файлы",     ico="📁", fn=openFiles,        pos=UDim2.new(0,18,0,394)},
+    {lbl="Калькулятор",ico="🧮",fn=openCalc,         pos=UDim2.new(0,110,0,18)},
+    {lbl="Настройки", ico="⚙",  fn=openSettings,     pos=UDim2.new(0,110,0,112)},
+    {lbl="Монитор",   ico="📈", fn=openSysMonitor,   pos=UDim2.new(0,110,0,206)},
+}
+
+for _,ic in ipairs(ICONS) do
+    local fr=c("Frame",{
+        Size=UDim2.new(0,76,0,82), Position=ic.pos,
+        BackgroundColor3=T.surface, BackgroundTransparency=0.3,
+        BorderSizePixel=0,ZIndex=2},desktop)
+    corner(fr,10); stroke(fr,T.border,1,.4)
+
+    c("TextLabel",{Size=UDim2.new(1,0,0,48),Position=UDim2.new(0,0,0,4),
+        BackgroundTransparency=1,Text=ic.ico,
+        Font=Enum.Font.GothamBold,TextSize=30,ZIndex=3},fr)
+
+    c("TextLabel",{Size=UDim2.new(1,-4,0,26),Position=UDim2.new(0,2,0,50),
+        BackgroundTransparency=1,Text=ic.lbl,
+        Font=Enum.Font.Gotham,TextSize=10,TextColor3=T.text,
+        TextWrapped=true,ZIndex=3},fr)
+
+    local btn=c("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
+        Text="",ZIndex=4},fr)
+
+    btn.MouseEnter:Connect(function()
+        tw(fr,{BackgroundTransparency=0.1, BackgroundColor3=T.surface2})
+    end)
+    btn.MouseLeave:Connect(function()
+        tw(fr,{BackgroundTransparency=0.3, BackgroundColor3=T.surface})
+    end)
+    btn.MouseButton1Click:Connect(ic.fn)
+end
+
+-- ── ПАНЕЛЬ ЗАДАЧ ───────────────────────────────────────────────
+local taskbar=c("Frame",{
+    Size=UDim2.new(1,0,0,44), Position=UDim2.new(0,0,1,-44),
+    BackgroundColor3=T.bg1, BorderSizePixel=0,ZIndex=50},gui)
+
+c("Frame",{Size=UDim2.new(1,0,0,1),
+    BackgroundColor3=T.accent,BackgroundTransparency=0.6,
+    BorderSizePixel=0,ZIndex=51},taskbar)
+
+-- Кнопка пуск
+local startBtn=c("TextButton",{
+    Size=UDim2.new(0,90,0,32), Position=UDim2.new(0,6,0.5,-16),
+    BackgroundColor3=T.accentDk, Text="⊞  ПУСК",
+    TextColor3=Color3.new(1,1,1), Font=Enum.Font.GothamBold,TextSize=14,
+    ZIndex=51,BorderSizePixel=0},taskbar)
+corner(startBtn,6)
+
+-- Открытые окна на таскбаре
+local taskWinArea = c("Frame",{
+    Size=UDim2.new(0,500,0,32), Position=UDim2.new(0,106,0.5,-16),
+    BackgroundTransparency=1, ZIndex=51},taskbar)
+c("UIListLayout",{
+    FillDirection=Enum.FillDirection.Horizontal,
+    Padding=UDim.new(0,4),
+},taskWinArea)
+
+refreshTaskbar = function()
+    for _,ch in ipairs(taskWinArea:GetChildren()) do
+        if ch:IsA("TextButton") then ch:Destroy() end
+    end
+    for title, _ in pairs(OpenWinNames) do
+        if WINS[title] and WINS[title].Parent then
+            local short = title:gsub("^%s+",""):sub(1,12)
+            local tb = c("TextButton",{
+                Size=UDim2.new(0,90,1,0),
+                BackgroundColor3=T.surface2,
+                Text=short, TextColor3=T.text,
+                Font=Enum.Font.Gotham, TextSize=11,
+                ZIndex=52, BorderSizePixel=0,
+            },taskWinArea)
+            corner(tb,5)
+            hover(tb, T.surface2, T.surface)
+            tb.MouseButton1Click:Connect(function()
+                local w = WINS[title]
+                if w then w.Visible=true; Z+=1; w.ZIndex=Z end
+            end)
+        end
+    end
+end
+
+-- Часы
+local clockFrame=c("Frame",{
+    Size=UDim2.new(0,90,1,0), Position=UDim2.new(1,-96,0,0),
+    BackgroundTransparency=1,ZIndex=51},taskbar)
+
+local clockMain=c("TextLabel",{
+    Size=UDim2.new(1,0,0,22),Position=UDim2.new(0,0,0,4),
+    BackgroundTransparency=1, Text=os.date("%H:%M"),
+    Font=Enum.Font.GothamBold,TextSize=16,TextColor3=T.text,
+    ZIndex=52},clockFrame)
+
+local clockDate=c("TextLabel",{
+    Size=UDim2.new(1,0,0,14),Position=UDim2.new(0,0,0,24),
+    BackgroundTransparency=1, Text=os.date("%d.%m.%Y"),
+    Font=Enum.Font.Gotham,TextSize=11,TextColor3=T.textDim,
+    ZIndex=52},clockFrame)
+
+task.spawn(function()
+    while gui and gui.Parent do
+        task.wait(1)
+        clockMain.Text=os.date("%H:%M")
+        clockDate.Text=os.date("%d.%m.%Y")
+    end
+end)
+
+-- Логотип
+c("TextLabel",{
+    Size=UDim2.new(0,80,1,0), Position=UDim2.new(0.5,-40,0,0),
+    BackgroundTransparency=1, Text="LuaOS",
+    Font=Enum.Font.GothamBold,TextSize=13,TextColor3=T.textMut,
+    ZIndex=51},taskbar)
+
+-- ── МЕНЮ ПУСК ─────────────────────────────────────────────────
+local smOpen=false
+local sm=c("Frame",{
+    Size=UDim2.new(0,280,0,460),
+    Position=UDim2.new(0,-290,1,-44),
+    BackgroundColor3=T.bg2,
+    BorderSizePixel=0,ZIndex=60, Visible=false},gui)
+corner(sm,12); stroke(sm,T.accent,1,.4)
+
+local smHead=c("Frame",{
+    Size=UDim2.new(1,0,0,70),
+    BackgroundColor3=T.accentDk,
+    BorderSizePixel=0,ZIndex=61},sm)
+corner(smHead,12)
+c("Frame",{Size=UDim2.new(1,0,0.5,0),Position=UDim2.new(0,0,0.5,0),
+    BackgroundColor3=T.accentDk,BorderSizePixel=0,ZIndex=61},smHead)
+
+c("TextLabel",{
+    Size=UDim2.new(1,-12,0,28),Position=UDim2.new(0,12,0,10),
+    BackgroundTransparency=1, Text="👤  "..player.Name,
+    Font=Enum.Font.GothamBold,TextSize=16,TextColor3=T.text,
+    TextXAlignment=Enum.TextXAlignment.Left,ZIndex=62},smHead)
+
+c("TextLabel",{
+    Size=UDim2.new(1,-12,0,16),Position=UDim2.new(0,12,0,40),
+    BackgroundTransparency=1, Text="LuaOS 3.0.0 Aurora — Enhanced Edition",
+    Font=Enum.Font.Gotham,TextSize=11,TextColor3=Color3.fromRGB(160,190,255),
+    TextXAlignment=Enum.TextXAlignment.Left,ZIndex=62},smHead)
+
+local smApps={
+    {ico="⌨",  lbl="Терминал",          fn=openTerminal},
+    {ico="📝", lbl="Блокнот",            fn=openNotepad},
+    {ico="📊", lbl="Менеджер задач",     fn=openTaskManager},
+    {ico="🌐", lbl="Браузер",            fn=openBrowser},
+    {ico="📁", lbl="Файловый менеджер",  fn=openFiles},
+    {ico="🧮", lbl="Калькулятор",        fn=openCalc},
+    {ico="⚙",  lbl="Настройки",          fn=openSettings},
+    {ico="📈", lbl="Системный монитор",  fn=openSysMonitor},
+}
+
+local smList=c("Frame",{
+    Size=UDim2.new(1,-12,0,300),
+    Position=UDim2.new(0,6,0,76),
+    BackgroundTransparency=1,ZIndex=61},sm)
+c("UIListLayout",{Padding=UDim.new(0,3)},smList)
+
+for _,app in ipairs(smApps) do
+    local row=c("TextButton",{
+        Size=UDim2.new(1,0,0,34),
+        BackgroundColor3=T.bg2,
+        Text="",BorderSizePixel=0,ZIndex=62},smList)
+    corner(row,7); hover(row,T.bg2,T.surface)
+
+    c("TextLabel",{Size=UDim2.new(0,36,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundTransparency=1,Text=app.ico,
+        Font=Enum.Font.GothamBold,TextSize=18,ZIndex=63},row)
+
+    c("TextLabel",{Size=UDim2.new(1,-50,1,0),Position=UDim2.new(0,46,0,0),
+        BackgroundTransparency=1,Text=app.lbl,
+        Font=Enum.Font.Gotham,TextSize=13,TextColor3=T.text,
+        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=63},row)
+
+    row.MouseButton1Click:Connect(function()
+        smOpen=false
+        tw(sm,{Position=UDim2.new(0,-290,1,-44)},.2)
+        task.delay(.21,function() sm.Visible=false end)
+        app.fn()
+    end)
+end
+
+-- Разделитель
+c("Frame",{Size=UDim2.new(1,-12,0,1),Position=UDim2.new(0,6,0,385),
+    BackgroundColor3=T.border,BackgroundTransparency=.4,
+    BorderSizePixel=0,ZIndex=61},sm)
+
+-- Кнопка выключения
+local shutBtn=c("TextButton",{
+    Size=UDim2.new(1,-12,0,40), Position=UDim2.new(0,6,0,394),
+    BackgroundColor3=Color3.fromRGB(160,30,30),
+    Text="⏻   Выключить LuaOS",
+    TextColor3=Color3.new(1,1,1),
+    Font=Enum.Font.GothamBold,TextSize=13,
+    ZIndex=62,BorderSizePixel=0},sm)
+corner(shutBtn,7)
+hover(shutBtn,Color3.fromRGB(160,30,30),Color3.fromRGB(210,45,45))
+
+shutBtn.MouseButton1Click:Connect(function()
+    smOpen=false; sm.Visible=false
+    local ov=c("Frame",{
+        Size=UDim2.new(1,0,1,0),
+        BackgroundColor3=Color3.new(0,0,0),
+        BackgroundTransparency=1, ZIndex=9999},gui)
+    tw(ov,{BackgroundTransparency=0},1)
+    task.delay(1,function()
+        c("TextLabel",{
+            Size=UDim2.new(1,0,0,60),Position=UDim2.new(0,0,0.42,0),
+            BackgroundTransparency=1, Text="LuaOS завершила работу",
+            Font=Enum.Font.GothamBold,TextSize=22,
+            TextColor3=T.accent,ZIndex=10000},ov)
+        c("TextLabel",{
+            Size=UDim2.new(1,0,0,30),Position=UDim2.new(0,0,0.52,0),
+            BackgroundTransparency=1, Text="v3.0.0 Aurora — Спасибо за использование!",
+            Font=Enum.Font.Gotham,TextSize=14,
+            TextColor3=T.textDim,ZIndex=10000},ov)
+    end)
+    task.delay(4,function() gui:Destroy() end)
+end)
+
+-- Логика пуск
+local function toggleSM()
+    smOpen=not smOpen
+    if smOpen then
+        sm.Visible=true
+        sm.Position=UDim2.new(0,-290,1,-44)
+        tw(sm,{Position=UDim2.new(0,6,1,-sm.Size.Y.Offset-44)},.22,Enum.EasingStyle.Back)
+    else
+        tw(sm,{Position=UDim2.new(0,-290,1,-44)},.18)
+        task.delay(.2,function() sm.Visible=false end)
+    end
+end
+
+startBtn.MouseButton1Click:Connect(toggleSM)
+hover(startBtn, T.accentDk, T.accent)
+
+desktop.InputBegan:Connect(function(i)
+    if smOpen and i.UserInputType==Enum.UserInputType.MouseButton1 then
+        smOpen=false
+        tw(sm,{Position=UDim2.new(0,-290,1,-44)},.18)
+        task.delay(.2,function() sm.Visible=false end)
+    end
+end)
+
+-- ── ЗАГРУЗОЧНЫЙ ЭКРАН ─────────────────────────────────────────
+local boot=c("Frame",{
+    Size=UDim2.new(1,0,1,0),
+    BackgroundColor3=Color3.fromRGB(3,4,10),
+    ZIndex=9000},gui)
+
+local bootLogo=c("TextLabel",{
+    Size=UDim2.new(1,0,0,90), Position=UDim2.new(0,0,0.35,0),
+    BackgroundTransparency=1, Text="LuaOS",
+    Font=Enum.Font.GothamBold,TextSize=72,
+    TextColor3=T.accent,ZIndex=9001},boot)
+
+local bootSub=c("TextLabel",{
+    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0.35,90),
+    BackgroundTransparency=1, Text="v3.0.0 Aurora  ·  Enhanced Edition",
+    Font=Enum.Font.Gotham,TextSize=16,
+    TextColor3=T.textDim,ZIndex=9001},boot)
+
+local bootVer=c("TextLabel",{
+    Size=UDim2.new(1,0,0,20), Position=UDim2.new(0,0,0.35,115),
+    BackgroundTransparency=1, Text="Powered by Luau Runtime",
+    Font=Enum.Font.Gotham,TextSize=12,
+    TextColor3=T.textMut,ZIndex=9001},boot)
+
+local pbBg=c("Frame",{
+    Size=UDim2.new(0,360,0,4), Position=UDim2.new(0.5,-180,0.72,0),
+    BackgroundColor3=T.surface2, BorderSizePixel=0,ZIndex=9001},boot)
+corner(pbBg,2)
+
+local pbFill=c("Frame",{
+    Size=UDim2.new(0,0,1,0),
+    BackgroundColor3=T.accent,
+    BorderSizePixel=0,ZIndex=9002},pbBg)
+corner(pbFill,2)
+
+local pbStatus=c("TextLabel",{
+    Size=UDim2.new(0,360,0,20), Position=UDim2.new(0.5,-180,0.72,10),
+    BackgroundTransparency=1, Text="Инициализация...",
+    Font=Enum.Font.Code,TextSize=12,
+    TextColor3=T.textMut,ZIndex=9001},boot)
+
+local steps={
+    {t="Инициализация ядра v3.0...",         p=0.12},
+    {t="Монтирование файловой системы...",   p=0.26},
+    {t="Загрузка темы: "..ActiveTheme.."...", p=0.38},
+    {t="Запуск системных сервисов...",        p=0.52},
+    {t="Инициализация менеджера окон...",     p=0.64},
+    {t="Запуск системы уведомлений...",       p=0.76},
+    {t="Авторизация "..player.Name.."...",    p=0.90},
+    {t="Готово! Добро пожаловать.",           p=1.00},
+}
+
+task.spawn(function()
+    for _,s in ipairs(steps) do
+        pbStatus.Text=s.t
+        tw(pbFill,{Size=UDim2.new(s.p,0,1,0)},.4)
+        task.wait(.38)
+    end
+    task.wait(.3)
+
+    local function fadeOut(obj)
+        if obj:IsA("TextLabel") then tw(obj,{TextTransparency=1},.5) end
+        if obj:IsA("Frame") or obj:IsA("TextLabel") then
+            tw(obj,{BackgroundTransparency=1},.5)
+        end
+        for _,ch in ipairs(obj:GetChildren()) do fadeOut(ch) end
+    end
+
+    fadeOut(bootLogo); fadeOut(bootSub); fadeOut(bootVer)
+    fadeOut(pbBg); fadeOut(pbStatus)
+    task.wait(.3)
+    tw(boot,{BackgroundTransparency=1},.5)
+    task.wait(.55)
+    boot:Destroy()
+
+    -- Приветственное уведомление
+    task.delay(0.5, function()
+        notify("Добро пожаловать!", "LuaOS v3.0 Aurora загружена.\n"..player.DisplayName..", приятного использования!", 5, "👋")
+    end)
+end)
