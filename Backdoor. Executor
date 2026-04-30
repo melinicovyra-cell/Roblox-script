@@ -76,119 +76,358 @@ local notifOrder = 0
 local function notify(text, nType)
 	notifOrder = notifOrder + 1
 	local colors = {
-		success = {bg = Color3.fromRGB(0, 80, 0), accent = Color3.fromRGB(0, 200, 0), icon = ">>"},
-		error = {bg = Color3.fromRGB(100, 0, 0), accent = Color3.fromRGB(255, 50, 50), icon = "!!"},
-		info = {bg = Color3.fromRGB(20, 20, 60), accent = Color3.fromRGB(80, 120, 255), icon = "i"},
-		warn = {bg = Color3.fromRGB(80, 60, 0), accent = Color3.fromRGB(255, 200, 0), icon = "!"},
+		success = {bg = Color3.fromRGB(0, 50, 20), accent = Color3.fromRGB(50, 230, 120), glow = Color3.fromRGB(0, 255, 100)},
+		error   = {bg = Color3.fromRGB(60, 0, 10),  accent = Color3.fromRGB(255, 80, 80),  glow = Color3.fromRGB(255, 50, 50)},
+		info    = {bg = Color3.fromRGB(10, 25, 60), accent = Color3.fromRGB(100, 160, 255),glow = Color3.fromRGB(80, 140, 255)},
+		warn    = {bg = Color3.fromRGB(60, 40, 0),  accent = Color3.fromRGB(255, 200, 60), glow = Color3.fromRGB(255, 180, 0)},
 	}
 	local c = colors[nType] or colors.info
+	local DURATION = 3
 
-	local frame = Instance.new("Frame", notifContainer)
-	frame.Size = UDim2.new(1, 0, 0, 40)
-	frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-	frame.BackgroundTransparency = 0.1
+	-- glow за фреймом (через ImageLabel с радиальной картинкой Roblox)
+	local glow = Instance.new("ImageLabel", notifContainer)
+	glow.Size = UDim2.new(1, 30, 0, 70)
+	glow.Position = UDim2.new(0, -15, 0, -15)
+	glow.BackgroundTransparency = 1
+	glow.Image = "rbxassetid://5028857084" -- мягкое радиальное свечение
+	glow.ImageColor3 = c.glow
+	glow.ImageTransparency = 0.65
+	glow.ZIndex = 200
+	glow.LayoutOrder = notifOrder
+	glow.Active = false
+
+	-- основной фрейм поверх glow
+	local frame = Instance.new("Frame", glow)
+	frame.Size = UDim2.new(1, -30, 0, 44)
+	frame.Position = UDim2.new(0, 15, 0, 15)
+	frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+	frame.BackgroundTransparency = 0
 	frame.ZIndex = 201
-	frame.LayoutOrder = notifOrder
-	round(frame, 8)
+	frame.ClipsDescendants = true
+	round(frame, 10)
 
+	-- внутренний градиент для глубины
+	local fGrad = Instance.new("UIGradient", frame)
+	fGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 34)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 14, 18))
+	})
+	fGrad.Rotation = 90
+
+	-- обводка с цветом акцента
 	local nStroke = Instance.new("UIStroke", frame)
 	nStroke.Color = c.accent
-	nStroke.Thickness = 1
-	nStroke.Transparency = 0.5
+	nStroke.Thickness = 1.2
+	nStroke.Transparency = 0.3
+	nStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
+	-- акцентная полоса слева (толще, ярче)
 	local accentBar = Instance.new("Frame", frame)
-	accentBar.Size = UDim2.new(0, 3, 0.7, 0)
-	accentBar.Position = UDim2.new(0, 6, 0.15, 0)
+	accentBar.Size = UDim2.new(0, 4, 1, -10)
+	accentBar.Position = UDim2.new(0, 5, 0, 5)
 	accentBar.BackgroundColor3 = c.accent
 	accentBar.BorderSizePixel = 0
 	accentBar.ZIndex = 202
 	round(accentBar, 2)
 
-	local iconLabel = Instance.new("TextLabel", frame)
-	iconLabel.Size = UDim2.new(0, 22, 0, 22)
-	iconLabel.Position = UDim2.new(0, 14, 0.5, -11)
-	iconLabel.BackgroundColor3 = c.bg
-	iconLabel.Text = c.icon
-	iconLabel.TextColor3 = c.accent
-	iconLabel.Font = Enum.Font.GothamBold
-	iconLabel.TextSize = 10
-	iconLabel.ZIndex = 202
-	round(iconLabel, 6)
+	-- индикатор-кружок (без текста, цвет = тип уведомления)
+	local iconBg = Instance.new("Frame", frame)
+	iconBg.Size = UDim2.new(0, 14, 0, 14)
+	iconBg.Position = UDim2.new(0, 22, 0.5, -7)
+	iconBg.BackgroundColor3 = c.accent
+	iconBg.BorderSizePixel = 0
+	iconBg.ZIndex = 202
+	round(iconBg, 7)
+	-- внутренний светлый блик (даёт ощущение "светящейся точки")
+	local iconHi = Instance.new("Frame", iconBg)
+	iconHi.Size = UDim2.new(0, 5, 0, 5)
+	iconHi.Position = UDim2.new(0, 3, 0, 3)
+	iconHi.BackgroundColor3 = Color3.new(1, 1, 1)
+	iconHi.BackgroundTransparency = 0.4
+	iconHi.BorderSizePixel = 0
+	iconHi.ZIndex = 203
+	round(iconHi, 3)
 
+	-- основной текст
 	local nText = Instance.new("TextLabel", frame)
-	nText.Size = UDim2.new(1, -50, 1, 0)
-	nText.Position = UDim2.new(0, 42, 0, 0)
+	nText.Size = UDim2.new(1, -50, 1, -8)
+	nText.Position = UDim2.new(0, 44, 0, 2)
 	nText.BackgroundTransparency = 1
 	nText.Text = text
-	nText.TextColor3 = Color3.fromRGB(210, 210, 210)
-	nText.Font = Enum.Font.Gotham
-	nText.TextSize = 11
+	nText.TextColor3 = Color3.fromRGB(230, 230, 235)
+	nText.Font = Enum.Font.GothamMedium
+	nText.TextSize = 12
 	nText.TextXAlignment = Enum.TextXAlignment.Left
+	nText.TextYAlignment = Enum.TextYAlignment.Center
 	nText.TextTruncate = Enum.TextTruncate.AtEnd
-	nText.ZIndex = 202
+	nText.ZIndex = 203
 
-	frame.Position = UDim2.new(1, 0, 0, 0)
-	TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0, 0, 0, 0)
+	-- прогресс-бар жизни уведомления внизу
+	local progBg = Instance.new("Frame", frame)
+	progBg.Size = UDim2.new(1, -16, 0, 2)
+	progBg.Position = UDim2.new(0, 8, 1, -5)
+	progBg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+	progBg.BorderSizePixel = 0
+	progBg.ZIndex = 202
+	round(progBg, 1)
+
+	local progFill = Instance.new("Frame", progBg)
+	progFill.Size = UDim2.new(1, 0, 1, 0)
+	progFill.BackgroundColor3 = c.accent
+	progFill.BorderSizePixel = 0
+	progFill.ZIndex = 203
+	round(progFill, 1)
+
+	-- появление: slide-in
+	glow.Position = UDim2.new(0, -15 + 320, 0, -15)
+	frame.BackgroundTransparency = 0.5
+	TweenService:Create(glow, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, -15, 0, -15)
+	}):Play()
+	TweenService:Create(frame, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
+
+	-- прогресс-бар уезжает в 0
+	TweenService:Create(progFill, TweenInfo.new(DURATION, Enum.EasingStyle.Linear), {
+		Size = UDim2.new(0, 0, 1, 0)
 	}):Play()
 
-	task.delay(3, function()
-		TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(1, 20, 0, 0),
-			BackgroundTransparency = 1
+	-- лёгкая пульсация glow и точки-индикатора
+	task.spawn(function()
+		local t = 0
+		while glow and glow.Parent do
+			t = t + 0.05
+			glow.ImageTransparency = 0.65 + math.sin(t) * 0.08
+			if iconHi and iconHi.Parent then
+				iconHi.BackgroundTransparency = 0.4 + math.sin(t * 1.5) * 0.2
+			end
+			task.wait(0.05)
+		end
+	end)
+
+	task.delay(DURATION, function()
+		if not glow or not glow.Parent then return end
+		TweenService:Create(glow, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0, -15 + 340, 0, -15),
+			ImageTransparency = 1
 		}):Play()
+		TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
 		TweenService:Create(nText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-		task.delay(0.35, function() frame:Destroy() end)
+		TweenService:Create(nStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+		task.delay(0.4, function() if glow then glow:Destroy() end end)
 	end)
 end
 
+-- ===== PREMIUM LOADER (V10.12+) =====
+
+-- затемнение всего экрана
+local loaderBackdrop = Instance.new("Frame", sg)
+loaderBackdrop.Size = UDim2.new(1, 0, 1, 0)
+loaderBackdrop.Position = UDim2.new(0, 0, 0, 0)
+loaderBackdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+loaderBackdrop.BackgroundTransparency = 0.35
+loaderBackdrop.BorderSizePixel = 0
+loaderBackdrop.ZIndex = 90
+loaderBackdrop.Active = true
+
+-- большой radial halo glow позади всего
+local loaderHalo = Instance.new("ImageLabel", sg)
+loaderHalo.Size = UDim2.new(0, 700, 0, 700)
+loaderHalo.Position = UDim2.new(0.5, -350, 0.5, -350)
+loaderHalo.BackgroundTransparency = 1
+loaderHalo.Image = "rbxassetid://5028857084"
+loaderHalo.ImageColor3 = Color3.fromRGB(255, 30, 0)
+loaderHalo.ImageTransparency = 0.6
+loaderHalo.ZIndex = 91
+
+-- основная карточка лоадера (тёмная стеклянная)
 local loader = Instance.new("Frame", sg)
-loader.Size = UDim2.new(0, 380, 0, 180)
-loader.Position = UDim2.new(0.5, -190, 0.5, -90)
-loader.BackgroundColor3 = Color3.new(1, 1, 1)
+loader.Size = UDim2.new(0, 420, 0, 240)
+loader.Position = UDim2.new(0.5, -210, 0.5, -120)
+loader.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 loader.BorderSizePixel = 0
 loader.ZIndex = 100
+loader.ClipsDescendants = true
 round(loader, 20)
 applyInfernoGradient(loader)
 
+-- двойная обводка для глубины
 local loaderStroke = Instance.new("UIStroke", loader)
-loaderStroke.Color = Color3.fromRGB(200, 30, 0)
-loaderStroke.Thickness = 2
-loaderStroke.Transparency = 0.3
+loaderStroke.Color = Color3.fromRGB(255, 60, 60)
+loaderStroke.Thickness = 1.5
+loaderStroke.Transparency = 0.2
+loaderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
+-- внутренняя обводка-блик
+local loaderInnerStroke = Instance.new("Frame", loader)
+loaderInnerStroke.Size = UDim2.new(1, -10, 1, -10)
+loaderInnerStroke.Position = UDim2.new(0, 5, 0, 5)
+loaderInnerStroke.BackgroundTransparency = 1
+loaderInnerStroke.ZIndex = 101
+round(loaderInnerStroke, 16)
+local lInnerS = Instance.new("UIStroke", loaderInnerStroke)
+lInnerS.Color = Color3.fromRGB(255, 255, 255)
+lInnerS.Thickness = 1
+lInnerS.Transparency = 0.85
+
+-- вращающийся spinner (через UIGradient на UIStroke — арка)
+local spinnerHolder = Instance.new("Frame", loader)
+spinnerHolder.Size = UDim2.new(0, 56, 0, 56)
+spinnerHolder.Position = UDim2.new(0, 30, 0.5, -28)
+spinnerHolder.BackgroundTransparency = 1
+spinnerHolder.ZIndex = 102
+round(spinnerHolder, 28)
+local spinnerStroke = Instance.new("UIStroke", spinnerHolder)
+spinnerStroke.Color = Color3.fromRGB(255, 80, 80)
+spinnerStroke.Thickness = 4
+local spinnerGrad = Instance.new("UIGradient", spinnerStroke)
+spinnerGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0),
+	NumberSequenceKeypoint.new(0.4, 0.3),
+	NumberSequenceKeypoint.new(0.8, 1),
+	NumberSequenceKeypoint.new(1, 1)
+})
+-- внутренний светящийся диск под spinner
+local spinnerCore = Instance.new("ImageLabel", loader)
+spinnerCore.Size = UDim2.new(0, 70, 0, 70)
+spinnerCore.Position = UDim2.new(0, 23, 0.5, -35)
+spinnerCore.BackgroundTransparency = 1
+spinnerCore.Image = "rbxassetid://5028857084"
+spinnerCore.ImageColor3 = Color3.fromRGB(255, 50, 50)
+spinnerCore.ImageTransparency = 0.5
+spinnerCore.ZIndex = 101
+
+-- крутим spinner
+task.spawn(function()
+	while spinnerGrad and spinnerGrad.Parent do
+		spinnerGrad.Rotation = (spinnerGrad.Rotation + 6) % 360
+		task.wait(0.02)
+	end
+end)
+
+-- блок текста справа от спиннера
 local lTitle = Instance.new("TextLabel", loader)
-lTitle.Size = UDim2.new(1, 0, 0, 80)
-lTitle.Text = "kr_backdoor"
-lTitle.TextColor3 = Color3.new(1, 1, 1)
-lTitle.Font = Enum.Font.GothamBold
-lTitle.TextSize = 42
-lTitle.ZIndex = 101
+lTitle.Size = UDim2.new(1, -110, 0, 44)
+lTitle.Position = UDim2.new(0, 100, 0, 38)
+lTitle.Text = "KR_BACKDOOR"
+lTitle.TextColor3 = Color3.fromRGB(255, 240, 240)
+lTitle.Font = Enum.Font.GothamBlack
+lTitle.TextSize = 28
+lTitle.TextXAlignment = Enum.TextXAlignment.Left
+lTitle.ZIndex = 102
 lTitle.BackgroundTransparency = 1
 
+-- градиент по титулу (от ярко-красного к белому)
+local titleGrad = Instance.new("UIGradient", lTitle)
+titleGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 200)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 50, 50))
+})
+titleGrad.Rotation = 90
+
+-- неоновая обводка титула
+local titleStroke = Instance.new("UIStroke", lTitle)
+titleStroke.Color = Color3.fromRGB(180, 0, 0)
+titleStroke.Thickness = 1.5
+titleStroke.Transparency = 0.2
+
+-- "v10.12" badge рядом с заголовком
+local versionBadge = Instance.new("TextLabel", loader)
+versionBadge.Size = UDim2.new(0, 50, 0, 18)
+versionBadge.Position = UDim2.new(0, 100, 0, 78)
+versionBadge.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+versionBadge.Text = "v10.12"
+versionBadge.TextColor3 = Color3.fromRGB(255, 180, 180)
+versionBadge.Font = Enum.Font.GothamBold
+versionBadge.TextSize = 10
+versionBadge.ZIndex = 102
+versionBadge.BorderSizePixel = 0
+round(versionBadge, 4)
+local vbStroke = Instance.new("UIStroke", versionBadge)
+vbStroke.Color = Color3.fromRGB(255, 80, 80)
+vbStroke.Thickness = 1
+vbStroke.Transparency = 0.4
+
+-- subtitle "Created by Krsp Team"
+local subtitle = Instance.new("TextLabel", loader)
+subtitle.Size = UDim2.new(0, 200, 0, 18)
+subtitle.Position = UDim2.new(0, 158, 0, 78)
+subtitle.Text = "Created by Krsp Team"
+subtitle.TextColor3 = Color3.fromRGB(170, 170, 180)
+subtitle.Font = Enum.Font.GothamMedium
+subtitle.TextSize = 11
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.ZIndex = 102
+subtitle.BackgroundTransparency = 1
+
+-- статус-текст (меняется по ходу загрузки) — справа от спиннера, между subtitle и прогресс-баром
 local statusLabel = Instance.new("TextLabel", loader)
-statusLabel.Size = UDim2.new(1, 0, 0, 30)
-statusLabel.Position = UDim2.new(0, 0, 0, 75)
-statusLabel.Text = "Initializing Interface..."
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.Font = Enum.Font.GothamMedium
-statusLabel.TextSize = 16
-statusLabel.ZIndex = 101
+statusLabel.Size = UDim2.new(1, -130, 0, 16)
+statusLabel.Position = UDim2.new(0, 100, 0, 110)
+statusLabel.Text = "Initializing interface..."
+statusLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 11
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.TextTruncate = Enum.TextTruncate.AtEnd
+statusLabel.ZIndex = 102
 statusLabel.BackgroundTransparency = 1
 
+-- (статусы меняются из основного loading-loop ниже, чтобы не было конфликта)
+
+-- прогресс-бар, новый: тёмный жёлоб + яркий fill с градиентом
 local loadBarBg = Instance.new("Frame", loader)
-loadBarBg.Size = UDim2.new(0.7, 0, 0, 4)
-loadBarBg.Position = UDim2.new(0.15, 0, 0, 120)
-loadBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-loadBarBg.ZIndex = 101
+loadBarBg.Size = UDim2.new(1, -60, 0, 6)
+loadBarBg.Position = UDim2.new(0, 30, 0, 158)
+loadBarBg.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+loadBarBg.ZIndex = 102
 loadBarBg.BorderSizePixel = 0
-round(loadBarBg, 2)
+loadBarBg.ClipsDescendants = true
+round(loadBarBg, 3)
+local loadBarBgStroke = Instance.new("UIStroke", loadBarBg)
+loadBarBgStroke.Color = Color3.fromRGB(60, 0, 0)
+loadBarBgStroke.Thickness = 1
+loadBarBgStroke.Transparency = 0.5
 
 local loadBarFill = Instance.new("Frame", loadBarBg)
 loadBarFill.Size = UDim2.new(0, 0, 1, 0)
-loadBarFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-loadBarFill.ZIndex = 102
+loadBarFill.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+loadBarFill.ZIndex = 103
 loadBarFill.BorderSizePixel = 0
-round(loadBarFill, 2)
+round(loadBarFill, 3)
+-- градиент в fill (от тёмного к яркому)
+local fillGrad = Instance.new("UIGradient", loadBarFill)
+fillGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 0, 0)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 80, 80)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 100))
+})
+
+-- бегущий блик внутри прогресс-бара
+local fillShine = Instance.new("Frame", loadBarFill)
+fillShine.Size = UDim2.new(0, 30, 1, 0)
+fillShine.Position = UDim2.new(0, -30, 0, 0)
+fillShine.BackgroundColor3 = Color3.new(1, 1, 1)
+fillShine.BackgroundTransparency = 0.6
+fillShine.BorderSizePixel = 0
+fillShine.ZIndex = 104
+local shineGrad = Instance.new("UIGradient", fillShine)
+shineGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.4),
+	NumberSequenceKeypoint.new(1, 1)
+})
+task.spawn(function()
+	while fillShine and fillShine.Parent do
+		fillShine.Position = UDim2.new(0, -30, 0, 0)
+		TweenService:Create(fillShine, TweenInfo.new(1.2, Enum.EasingStyle.Linear), {
+			Position = UDim2.new(1, 0, 0, 0)
+		}):Play()
+		task.wait(1.2)
+	end
+end)
+
+-- (частицы убраны в V10.12 — мешали восприятию)
 
 local shadow = Instance.new("ImageLabel", sg)
 shadow.Size = UDim2.new(0, 680, 0, 510)
@@ -201,6 +440,17 @@ shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(23, 23, 277, 277)
 shadow.Visible = false
 
+-- ===== HALO GLOW за главным окном =====
+local frameHalo = Instance.new("ImageLabel", sg)
+frameHalo.Size = UDim2.new(0, 710, 0, 540)
+frameHalo.Position = UDim2.new(0.5, -355, 0.5, -270)
+frameHalo.BackgroundTransparency = 1
+frameHalo.Image = "rbxassetid://5028857084"
+frameHalo.ImageColor3 = Color3.fromRGB(255, 30, 30)
+frameHalo.ImageTransparency = 0.85
+frameHalo.Visible = false
+frameHalo.ZIndex = 0
+
 local mainFrame = Instance.new("Frame", sg)
 mainFrame.Size = UDim2.new(0, 650, 0, 480)
 mainFrame.Position = UDim2.new(0.5, -325, 0.5, -240)
@@ -211,48 +461,156 @@ round(mainFrame, 15)
 applyInfernoGradient(mainFrame)
 
 local mainStroke = Instance.new("UIStroke", mainFrame)
-mainStroke.Color = Color3.fromRGB(200, 30, 0)
+mainStroke.Color = Color3.fromRGB(255, 90, 60)
 mainStroke.Thickness = 2
-mainStroke.Transparency = 0.2
+mainStroke.Transparency = 0.1
+
+-- лёгкая пульсация main stroke и halo (синхронно с титулом header)
+task.spawn(function()
+	while mainStroke and mainStroke.Parent do
+		TweenService:Create(mainStroke, TweenInfo.new(2.5, Enum.EasingStyle.Sine), {Transparency = 0.4, Color = Color3.fromRGB(220, 40, 30)}):Play()
+		TweenService:Create(frameHalo, TweenInfo.new(2.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.92}):Play()
+		task.wait(2.5)
+		TweenService:Create(mainStroke, TweenInfo.new(2.5, Enum.EasingStyle.Sine), {Transparency = 0.1, Color = Color3.fromRGB(255, 80, 40)}):Play()
+		TweenService:Create(frameHalo, TweenInfo.new(2.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.8}):Play()
+		task.wait(2.5)
+	end
+end)
 
 local header = Instance.new("Frame", mainFrame)
 header.Size = UDim2.new(1, 0, 0, 50)
-header.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-header.BackgroundTransparency = 0.3
+header.BackgroundColor3 = Color3.fromRGB(15, 8, 12)
+header.BackgroundTransparency = 0.15
 round(header, 15)
 
-local headerLine = Instance.new("Frame", mainFrame)
+-- header градиент: тёмный → чуть красноватый
+local headerGrad = Instance.new("UIGradient", header)
+headerGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 10, 10)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 8, 10)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 5, 5))
+})
+headerGrad.Rotation = 0
+
+-- лёгкий блик на верхушке header
+local headerShine = Instance.new("Frame", header)
+headerShine.Size = UDim2.new(1, -20, 0, 1)
+headerShine.Position = UDim2.new(0, 10, 0, 2)
+headerShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+headerShine.BackgroundTransparency = 0.7
+headerShine.BorderSizePixel = 0
+headerShine.ZIndex = 2
+
+headerLine = Instance.new("Frame", mainFrame)
 headerLine.Size = UDim2.new(0.96, 0, 0, 1)
 headerLine.Position = UDim2.new(0.02, 0, 0, 50)
-headerLine.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-headerLine.BackgroundTransparency = 0.5
+headerLine.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+headerLine.BackgroundTransparency = 0.3
 headerLine.BorderSizePixel = 0
+-- делаем линию мерцающей (как у лоадера)
+local headerLineGrad = Instance.new("UIGradient", headerLine)
+headerLineGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.2, 0.3),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(0.8, 0.3),
+	NumberSequenceKeypoint.new(1, 1)
+})
+
+-- glow за заголовком "KR"
+local titleGlow = Instance.new("ImageLabel", header)
+titleGlow.Size = UDim2.new(0, 60, 0, 50)
+titleGlow.Position = UDim2.new(0, -5, 0, 0)
+titleGlow.BackgroundTransparency = 1
+titleGlow.Image = "rbxassetid://5028857084"
+titleGlow.ImageColor3 = Color3.fromRGB(255, 50, 50)
+titleGlow.ImageTransparency = 0.65
+titleGlow.ZIndex = 2
 
 local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Size = UDim2.new(0, 120, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.Size = UDim2.new(0, 50, 1, 0)
+titleLabel.Position = UDim2.new(0, 12, 0, 0)
 titleLabel.Text = "KR"
-titleLabel.TextColor3 = Color3.new(1, 1, 1)
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 18
+titleLabel.TextColor3 = Color3.fromRGB(255, 230, 230)
+titleLabel.Font = Enum.Font.GothamBlack
+titleLabel.TextSize = 22
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.BackgroundTransparency = 1
+titleLabel.ZIndex = 3
 
-local verLabel = Instance.new("TextLabel", header)
-verLabel.Size = UDim2.new(0, 42, 0, 18)
-verLabel.Position = UDim2.new(0, 38, 0, 16)
-verLabel.Text = "V10.0"
-verLabel.TextColor3 = Color3.fromRGB(0, 220, 0)
+-- градиент по KR (белый сверху → красный снизу)
+local titleLabelGrad = Instance.new("UIGradient", titleLabel)
+titleLabelGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 200)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 60))
+})
+titleLabelGrad.Rotation = 90
+
+-- неоновая обводка KR
+local titleStroke = Instance.new("UIStroke", titleLabel)
+titleStroke.Color = Color3.fromRGB(150, 0, 0)
+titleStroke.Thickness = 1.2
+titleStroke.Transparency = 0.2
+
+-- ===== VERSION BADGE (Frame с градиентом + TextLabel внутри без градиента) =====
+local verBadge = Instance.new("Frame", header)
+verBadge.Size = UDim2.new(0, 50, 0, 20)
+verBadge.Position = UDim2.new(0, 50, 0, 15)
+verBadge.BackgroundColor3 = Color3.fromRGB(0, 50, 20)
+verBadge.BorderSizePixel = 0
+verBadge.ZIndex = 3
+round(verBadge, 6)
+local verBadgeGrad = Instance.new("UIGradient", verBadge)
+verBadgeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 80, 35)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 35, 12))
+})
+verBadgeGrad.Rotation = 90
+local verBadgeStroke = Instance.new("UIStroke", verBadge)
+verBadgeStroke.Color = Color3.fromRGB(50, 230, 120)
+verBadgeStroke.Thickness = 1
+verBadgeStroke.Transparency = 0.2
+
+-- лёгкий блик сверху
+local verShine = Instance.new("Frame", verBadge)
+verShine.Size = UDim2.new(1, -6, 0, 1)
+verShine.Position = UDim2.new(0, 3, 0, 1)
+verShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+verShine.BackgroundTransparency = 0.6
+verShine.BorderSizePixel = 0
+verShine.ZIndex = 4
+
+local verLabel = Instance.new("TextLabel", verBadge)
+verLabel.Size = UDim2.new(1, 0, 1, 0)
+verLabel.BackgroundTransparency = 1
+verLabel.Text = "V10.12"
+verLabel.TextColor3 = Color3.fromRGB(150, 255, 180)
 verLabel.Font = Enum.Font.GothamBold
 verLabel.TextSize = 10
-verLabel.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
-verLabel.BackgroundTransparency = 0.3
 verLabel.TextXAlignment = Enum.TextXAlignment.Center
-round(verLabel, 6)
+verLabel.ZIndex = 5
+local verTextStroke = Instance.new("UIStroke", verLabel)
+verTextStroke.Color = Color3.fromRGB(0, 80, 30)
+verTextStroke.Thickness = 1
+verTextStroke.Transparency = 0.3
+
+-- лёгкая пульсация titleGlow и headerLine
+task.spawn(function()
+	while titleGlow and titleGlow.Parent do
+		TweenService:Create(titleGlow, TweenInfo.new(2, Enum.EasingStyle.Sine), {ImageTransparency = 0.85}):Play()
+		TweenService:Create(headerLineGrad, TweenInfo.new(2, Enum.EasingStyle.Sine), {Offset = Vector2.new(0.3, 0)}):Play()
+		task.wait(2)
+		TweenService:Create(titleGlow, TweenInfo.new(2, Enum.EasingStyle.Sine), {ImageTransparency = 0.55}):Play()
+		TweenService:Create(headerLineGrad, TweenInfo.new(2, Enum.EasingStyle.Sine), {Offset = Vector2.new(-0.3, 0)}):Play()
+		task.wait(2)
+	end
+end)
 
 local visible = false
 local function showMain()
 	shadow.Visible = true
+	frameHalo.Visible = true
 	mainFrame.Visible = true
 	local mainScale = mainFrame:FindFirstChildOfClass("UIScale")
 	if mainScale then
@@ -261,6 +619,8 @@ local function showMain()
 	end
 	mainFrame.BackgroundTransparency = 0.3
 	TweenService:Create(mainFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+	frameHalo.ImageTransparency = 1
+	TweenService:Create(frameHalo, TweenInfo.new(0.4), {ImageTransparency = 0.75}):Play()
 end
 
 local function hideMain()
@@ -269,54 +629,158 @@ local function hideMain()
 		TweenService:Create(mainScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Scale = 0.9}):Play()
 	end
 	TweenService:Create(mainFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
+	TweenService:Create(frameHalo, TweenInfo.new(0.2), {ImageTransparency = 1}):Play()
 	task.delay(0.2, function()
 		mainFrame.Visible = false
 		shadow.Visible = false
+		frameHalo.Visible = false
 	end)
 end
 
-local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -36, 0, 11)
-closeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.new(1, 1, 1)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 12
-round(closeBtn, 8)
-addButtonEffects(closeBtn, Color3.fromRGB(120, 0, 0), Color3.fromRGB(200, 0, 0))
+-- ===== HEADER ICON BUTTONS (close + minimize) =====
+local function makeIconBtn(parent, props)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(0, 28, 0, 28)
+	btn.Position = props.pos
+	btn.BackgroundColor3 = props.bg
+	btn.Text = props.text
+	btn.TextColor3 = Color3.fromRGB(255, 240, 240)
+	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
+	btn.Font = Enum.Font.GothamBlack
+	btn.TextSize = props.size or 13
+	btn.ZIndex = 4
+	round(btn, 14)
+
+	-- градиент
+	local g = Instance.new("UIGradient", btn)
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, props.gradTop),
+		ColorSequenceKeypoint.new(1, props.gradBot)
+	})
+	g.Rotation = 90
+
+	-- обводка
+	local s = Instance.new("UIStroke", btn)
+	s.Color = props.stroke
+	s.Thickness = 1.5
+	s.Transparency = 0.2
+
+	-- glow за кнопкой (виден при hover)
+	local glow = Instance.new("ImageLabel", btn)
+	glow.Size = UDim2.new(1, 16, 1, 16)
+	glow.Position = UDim2.new(0, -8, 0, -8)
+	glow.BackgroundTransparency = 1
+	glow.Image = "rbxassetid://5028857084"
+	glow.ImageColor3 = props.glow
+	glow.ImageTransparency = 1
+	glow.ZIndex = 3
+
+	-- маленький блик-полукруг сверху
+	local gloss = Instance.new("Frame", btn)
+	gloss.Size = UDim2.new(0.8, 0, 0.4, 0)
+	gloss.Position = UDim2.new(0.1, 0, 0.05, 0)
+	gloss.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	gloss.BackgroundTransparency = 0.75
+	gloss.BorderSizePixel = 0
+	gloss.ZIndex = 5
+	round(gloss, 8)
+	local glossGrad = Instance.new("UIGradient", gloss)
+	glossGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	glossGrad.Rotation = 90
+
+	local scale = Instance.new("UIScale", btn)
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = props.bgHover}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.25), {ImageTransparency = 0.3}):Play()
+		TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0, Thickness = 2}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = props.bg}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.25), {ImageTransparency = 1}):Play()
+		TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0.2, Thickness = 1.5}):Play()
+	end)
+	btn.MouseButton1Down:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 0.85}):Play()
+	end)
+	btn.MouseButton1Up:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
+
+	return btn
+end
+
+local closeBtn = makeIconBtn(header, {
+	pos = UDim2.new(1, -36, 0, 11),
+	bg = Color3.fromRGB(140, 20, 20), bgHover = Color3.fromRGB(200, 40, 40),
+	gradTop = Color3.fromRGB(200, 50, 50), gradBot = Color3.fromRGB(80, 0, 0),
+	stroke = Color3.fromRGB(255, 100, 100), glow = Color3.fromRGB(255, 50, 50),
+	text = "X", size = 13
+})
 
 closeBtn.MouseButton1Click:Connect(function()
 	visible = false
 	hideMain()
 end)
 
-local minimizeBtn = Instance.new("TextButton", header)
-minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
-minimizeBtn.Position = UDim2.new(1, -70, 0, 11)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 0)
-minimizeBtn.Text = "_"
-minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
-minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextSize = 12
-round(minimizeBtn, 8)
-addButtonEffects(minimizeBtn, Color3.fromRGB(60, 60, 0), Color3.fromRGB(120, 120, 0))
+local minimizeBtn = makeIconBtn(header, {
+	pos = UDim2.new(1, -70, 0, 11),
+	bg = Color3.fromRGB(120, 100, 0), bgHover = Color3.fromRGB(180, 150, 0),
+	gradTop = Color3.fromRGB(200, 170, 30), gradBot = Color3.fromRGB(80, 65, 0),
+	stroke = Color3.fromRGB(255, 220, 80), glow = Color3.fromRGB(255, 200, 0),
+	text = "", size = 16
+})
+-- горизонтальная полоска как иконка minimize
+local minBar = Instance.new("Frame", minimizeBtn)
+minBar.Size = UDim2.new(0, 12, 0, 2)
+minBar.Position = UDim2.new(0.5, -6, 0.5, -1)
+minBar.BackgroundColor3 = Color3.fromRGB(255, 245, 220)
+minBar.BorderSizePixel = 0
+minBar.ZIndex = 5
+round(minBar, 1)
 
 local minimized = false
 local savedSize
+local minimizeToken = 0  -- защита от двойного клика во время анимации
+local tabButtons = {}    -- forward-declare для minimize handler
+local activeTab = nil    -- forward-declare для minimize handler
+local pages              -- forward-declare для minimize handler
+local statusBar          -- forward-declare для minimize handler
+local headerLine         -- forward-declare для minimize handler
 
 minimizeBtn.MouseButton1Click:Connect(function()
+	minimizeToken = minimizeToken + 1
+	local myToken = minimizeToken
 	minimized = not minimized
 	if minimized then
 		savedSize = mainFrame.Size
+		-- сначала прячем контент, ПОТОМ сжимаем рамку (с защитой от nil)
+		pcall(function() statusBar.Visible = false end)
+		pcall(function() headerLine.Visible = false end)
+		pcall(function()
+			if pages then
+				for _, page in pairs(pages) do
+					page.Visible = false
+				end
+			end
+		end)
 		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 650, 0, 52)}):Play()
-		statusBar.Visible = false
-		headerLine.Visible = false
 	else
+		-- сначала растягиваем, ПОТОМ показываем контент когда tween дойдёт
 		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = savedSize or UDim2.new(0, 650, 0, 480)}):Play()
-		task.delay(0.15, function()
-			statusBar.Visible = true
-			headerLine.Visible = true
+		task.delay(0.3, function()
+			if myToken ~= minimizeToken then return end
+			if minimized then return end
+			pcall(function() statusBar.Visible = true end)
+			pcall(function() headerLine.Visible = true end)
+			pcall(function()
+				if activeTab and tabButtons and tabButtons[activeTab] then
+					tabButtons[activeTab].page.Visible = true
+				end
+			end)
 		end)
 	end
 end)
@@ -342,13 +806,14 @@ end
 
 makeDraggable(header, mainFrame)
 
-local pages = {}
+pages = {}
 pages.Exec = Instance.new("Frame", mainFrame)
 pages.Scripts = Instance.new("Frame", mainFrame)
 pages.Players = Instance.new("Frame", mainFrame)
 pages.Console = Instance.new("Frame", mainFrame)
 pages.Scanner = Instance.new("ScrollingFrame", mainFrame)
 pages.Updates = Instance.new("ScrollingFrame", mainFrame)
+pages.RedPl = Instance.new("ScrollingFrame", mainFrame)
 
 for name, page in pairs(pages) do
 	page.Size = UDim2.new(1, -16, 1, -80)
@@ -363,41 +828,86 @@ for name, page in pairs(pages) do
 	end
 end
 
-local tabButtons = {}
-local activeTab = nil
+-- (tabButtons и activeTab уже объявлены наверху для minimize handler)
 
 local function createTab(name, x, page, w)
 	local b = Instance.new("TextButton", header)
 	b.Size = UDim2.new(0, w or 68, 0, 28)
 	b.Position = UDim2.new(0, x, 0, 11)
-	b.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+	b.BackgroundColor3 = Color3.fromRGB(28, 24, 32)
 	b.Text = name
-	b.TextColor3 = Color3.fromRGB(160, 160, 160)
+	b.TextColor3 = Color3.fromRGB(235, 235, 245)
+	b.AutoButtonColor = false
 	b.Font = Enum.Font.GothamBold
-	b.TextSize = 8
+	b.TextSize = 9
+	b.ZIndex = 3
 	round(b, 8)
 
+	-- внутренний градиент: тёмные угольные тона
+	local g = Instance.new("UIGradient", b)
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 38, 50)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 16, 26))
+	})
+	g.Rotation = 90
+
+	-- яркая красная обводка по умолчанию (контраст к чёрному фону)
+	local s = Instance.new("UIStroke", b)
+	s.Color = Color3.fromRGB(180, 70, 90)
+	s.Thickness = 1.3
+	s.Transparency = 0.3
+
+	-- блик сверху
+	local tabShine = Instance.new("Frame", b)
+	tabShine.Size = UDim2.new(1, -8, 0, 1)
+	tabShine.Position = UDim2.new(0, 4, 0, 2)
+	tabShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	tabShine.BackgroundTransparency = 0.7
+	tabShine.BorderSizePixel = 0
+	tabShine.ZIndex = 4
+
+	-- glow для активной табы
+	local glow = Instance.new("ImageLabel", b)
+	glow.Size = UDim2.new(1, 18, 1, 18)
+	glow.Position = UDim2.new(0, -9, 0, -9)
+	glow.BackgroundTransparency = 1
+	glow.Image = "rbxassetid://5028857084"
+	glow.ImageColor3 = Color3.fromRGB(255, 80, 100)
+	glow.ImageTransparency = 1
+	glow.ZIndex = 2
+
+	-- толстая неоновая полоска под активной табой
 	local underline = Instance.new("Frame", b)
-	underline.Size = UDim2.new(0.6, 0, 0, 2)
-	underline.Position = UDim2.new(0.2, 0, 1, -3)
-	underline.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	underline.Size = UDim2.new(0.75, 0, 0, 3)
+	underline.Position = UDim2.new(0.125, 0, 1, -4)
+	underline.BackgroundColor3 = Color3.fromRGB(255, 70, 90)
 	underline.BorderSizePixel = 0
 	underline.Visible = false
+	underline.ZIndex = 4
+	round(underline, 2)
+	local ulGrad = Instance.new("UIGradient", underline)
+	ulGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 80)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 100, 130)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 130))
+	})
 
-	tabButtons[name] = {btn = b, line = underline, page = page}
+	tabButtons[name] = {btn = b, line = underline, page = page, glow = glow, stroke = s}
 
-	local defaultCol = Color3.fromRGB(40, 0, 0)
-	local hoverCol = Color3.fromRGB(80, 0, 0)
-	local activeCol = Color3.fromRGB(100, 10, 10)
+	local defaultBg = Color3.fromRGB(28, 24, 32)
+	local hoverBg = Color3.fromRGB(50, 42, 55)
+	local activeBg = Color3.fromRGB(180, 40, 65)
 
 	b.MouseEnter:Connect(function()
 		if activeTab ~= name then
-			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = hoverCol}):Play()
+			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = hoverBg, TextColor3 = Color3.new(1, 1, 1)}):Play()
+			TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0.05, Color = Color3.fromRGB(230, 100, 130), Thickness = 1.6}):Play()
 		end
 	end)
 	b.MouseLeave:Connect(function()
 		if activeTab ~= name then
-			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = defaultCol}):Play()
+			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = defaultBg, TextColor3 = Color3.fromRGB(235, 235, 245)}):Play()
+			TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0.3, Color = Color3.fromRGB(180, 70, 90), Thickness = 1.3}):Play()
 		end
 	end)
 
@@ -407,49 +917,93 @@ local function createTab(name, x, page, w)
 			tData.page.Visible = false
 			tData.line.Visible = false
 			TweenService:Create(tData.btn, TweenInfo.new(0.2), {
-				BackgroundColor3 = defaultCol,
-				TextColor3 = Color3.fromRGB(160, 160, 160)
+				BackgroundColor3 = defaultBg,
+				TextColor3 = Color3.fromRGB(235, 235, 245)
 			}):Play()
+			if tData.glow then
+				TweenService:Create(tData.glow, TweenInfo.new(0.2), {ImageTransparency = 1}):Play()
+			end
+			if tData.stroke then
+				TweenService:Create(tData.stroke, TweenInfo.new(0.2), {Transparency = 0.3, Color = Color3.fromRGB(180, 70, 90), Thickness = 1.3}):Play()
+			end
 		end
 		page.Visible = true
 		underline.Visible = true
 		activeTab = name
 		TweenService:Create(b, TweenInfo.new(0.2), {
-			BackgroundColor3 = activeCol,
+			BackgroundColor3 = activeBg,
 			TextColor3 = Color3.new(1, 1, 1)
 		}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.25), {ImageTransparency = 0.35}):Play()
+		TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0, Color = Color3.fromRGB(255, 110, 130), Thickness = 1.8}):Play()
 	end)
 end
 
-createTab("EXEC", 90, pages.Exec, 48)
-createTab("SCRIPTS", 142, pages.Scripts, 55)
-createTab("PLAYERS", 201, pages.Players, 55)
-createTab("CONSOLE", 260, pages.Console, 60)
-createTab("SCAN", 324, pages.Scanner, 42)
-createTab("LOG", 370, pages.Updates, 36)
+createTab("EXEC", 110, pages.Exec, 48)
+createTab("SCRIPTS", 162, pages.Scripts, 55)
+createTab("PLAYERS", 221, pages.Players, 55)
+createTab("CONSOLE", 280, pages.Console, 60)
+createTab("SCAN", 344, pages.Scanner, 42)
+createTab("LOG", 390, pages.Updates, 36)
+createTab("REDPL", 432, pages.RedPl, 52)
 
 activeTab = "EXEC"
 tabButtons["EXEC"].line.Visible = true
-tabButtons["EXEC"].btn.BackgroundColor3 = Color3.fromRGB(100, 10, 10)
+tabButtons["EXEC"].btn.BackgroundColor3 = Color3.fromRGB(180, 40, 65)
 tabButtons["EXEC"].btn.TextColor3 = Color3.new(1, 1, 1)
+if tabButtons["EXEC"].glow then
+	tabButtons["EXEC"].glow.ImageTransparency = 0.35
+end
+if tabButtons["EXEC"].stroke then
+	tabButtons["EXEC"].stroke.Color = Color3.fromRGB(255, 110, 130)
+	tabButtons["EXEC"].stroke.Transparency = 0
+	tabButtons["EXEC"].stroke.Thickness = 1.8
+end
 
 local editorBg = Instance.new("Frame", pages.Exec)
 editorBg.Size = UDim2.new(0.94, 0, 0, 238)
 editorBg.Position = UDim2.new(0.03, 0, 0.01, 0)
-editorBg.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+editorBg.BackgroundColor3 = Color3.fromRGB(12, 10, 14)
+editorBg.BorderSizePixel = 0
 round(editorBg, 10)
 
+-- градиент фона (тонкий, для глубины)
+local editorBgGrad = Instance.new("UIGradient", editorBg)
+editorBgGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 14, 18)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 6, 10))
+})
+editorBgGrad.Rotation = 90
+
+-- акцентная полоска с белым центром (как в action кнопках)
 local editorAccent = Instance.new("Frame", editorBg)
 editorAccent.Size = UDim2.new(0, 3, 0.9, 0)
 editorAccent.Position = UDim2.new(0, 4, 0.05, 0)
-editorAccent.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+editorAccent.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
 editorAccent.BorderSizePixel = 0
 round(editorAccent, 2)
+local editorAccentGrad = Instance.new("UIGradient", editorAccent)
+editorAccentGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 100)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 220, 220)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 100))
+})
+editorAccentGrad.Rotation = 90
 
 local editorStroke = Instance.new("UIStroke", editorBg)
-editorStroke.Color = Color3.fromRGB(60, 0, 0)
-editorStroke.Thickness = 1
-editorStroke.Transparency = 0.5
+editorStroke.Color = Color3.fromRGB(80, 20, 30)
+editorStroke.Thickness = 1.2
+editorStroke.Transparency = 0.4
+
+-- glow halo для editor (виден при фокусе)
+local editorGlow = Instance.new("ImageLabel", editorBg)
+editorGlow.Size = UDim2.new(1, 24, 1, 24)
+editorGlow.Position = UDim2.new(0, -12, 0, -12)
+editorGlow.BackgroundTransparency = 1
+editorGlow.Image = "rbxassetid://5028857084"
+editorGlow.ImageColor3 = Color3.fromRGB(255, 60, 60)
+editorGlow.ImageTransparency = 1
+editorGlow.ZIndex = 0
 
 local editorScroll = Instance.new("ScrollingFrame", editorBg)
 editorScroll.Size = UDim2.new(1, -18, 1, -22)
@@ -464,9 +1018,9 @@ editorScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 local editor = Instance.new("TextBox", editorScroll)
 editor.Size = UDim2.new(1, 0, 0, 220)
 editor.BackgroundTransparency = 1
-editor.TextColor3 = Color3.fromRGB(255, 100, 100)
+editor.TextColor3 = Color3.fromRGB(255, 130, 130)
 editor.PlaceholderText = "-- Write your script here..."
-editor.PlaceholderColor3 = Color3.fromRGB(80, 80, 80)
+editor.PlaceholderColor3 = Color3.fromRGB(90, 80, 90)
 editor.Font = Enum.Font.Code
 editor.TextSize = 14
 editor.MultiLine = true
@@ -476,6 +1030,16 @@ editor.TextXAlignment = Enum.TextXAlignment.Left
 editor.TextYAlignment = Enum.TextYAlignment.Top
 editor.TextWrapped = true
 editor.AutomaticSize = Enum.AutomaticSize.Y
+
+-- focus подсветка
+editor.Focused:Connect(function()
+	TweenService:Create(editorStroke, TweenInfo.new(0.3), {Transparency = 0, Thickness = 1.6, Color = Color3.fromRGB(255, 80, 80)}):Play()
+	TweenService:Create(editorGlow, TweenInfo.new(0.3), {ImageTransparency = 0.7}):Play()
+end)
+editor.FocusLost:Connect(function()
+	TweenService:Create(editorStroke, TweenInfo.new(0.3), {Transparency = 0.4, Thickness = 1.2, Color = Color3.fromRGB(80, 20, 30)}):Play()
+	TweenService:Create(editorGlow, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
+end)
 
 local charCounter = Instance.new("TextLabel", editorBg)
 charCounter.Size = UDim2.new(1, -10, 0, 16)
@@ -500,89 +1064,249 @@ btnRow1.Size = UDim2.new(0.94, 0, 0, 36)
 btnRow1.Position = UDim2.new(0.03, 0, 0, 248)
 btnRow1.BackgroundTransparency = 1
 
-local runBtn = Instance.new("TextButton", btnRow1)
-runBtn.Size = UDim2.new(0.32, 0, 1, 0)
-runBtn.Position = UDim2.new(0, 0, 0, 0)
-runBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-runBtn.Text = "EXECUTE"
-runBtn.TextColor3 = Color3.fromRGB(0, 220, 0)
-runBtn.Font = Enum.Font.GothamBold
-runBtn.TextSize = 11
-round(runBtn, 6)
-local runS = Instance.new("UIStroke", runBtn)
-runS.Color = Color3.fromRGB(0, 100, 0)
-runS.Thickness = 1
+-- ===== STYLED ACTION BUTTONS =====
+local function makeActionButton(parent, props)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = props.size
+	btn.Position = props.pos
+	btn.BackgroundColor3 = props.bg
+	btn.Text = ""
+	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
+	round(btn, 8)
 
-local clearBtn = Instance.new("TextButton", btnRow1)
-clearBtn.Size = UDim2.new(0.2, 0, 1, 0)
-clearBtn.Position = UDim2.new(0.34, 0, 0, 0)
-clearBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-clearBtn.Text = "CLEAR"
-clearBtn.TextColor3 = Color3.fromRGB(180, 60, 60)
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 10
-round(clearBtn, 6)
-local clearS = Instance.new("UIStroke", clearBtn)
-clearS.Color = Color3.fromRGB(80, 0, 0)
-clearS.Thickness = 1
+	-- внутренний градиент сверху-вниз
+	local g = Instance.new("UIGradient", btn)
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, props.gradTop),
+		ColorSequenceKeypoint.new(1, props.gradBot)
+	})
+	g.Rotation = 90
 
-local stopBtn = Instance.new("TextButton", btnRow1)
-stopBtn.Size = UDim2.new(0.22, 0, 1, 0)
-stopBtn.Position = UDim2.new(0.56, 0, 0, 0)
-stopBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-stopBtn.Text = "STOP"
-stopBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
-stopBtn.Font = Enum.Font.GothamBold
-stopBtn.TextSize = 10
-round(stopBtn, 6)
-local stopS = Instance.new("UIStroke", stopBtn)
-stopS.Color = Color3.fromRGB(100, 60, 0)
-stopS.Thickness = 1
+	-- внешняя обводка-акцент
+	local s = Instance.new("UIStroke", btn)
+	s.Color = props.stroke
+	s.Thickness = 1.5
+	s.Transparency = 0.1
 
-local pasteBtn = Instance.new("TextButton", btnRow1)
-pasteBtn.Size = UDim2.new(0.2, 0, 1, 0)
-pasteBtn.Position = UDim2.new(0.8, 0, 0, 0)
-pasteBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-pasteBtn.Text = "PASTE"
-pasteBtn.TextColor3 = Color3.fromRGB(140, 140, 220)
-pasteBtn.Font = Enum.Font.GothamBold
-pasteBtn.TextSize = 10
-round(pasteBtn, 6)
-local pasteS = Instance.new("UIStroke", pasteBtn)
-pasteS.Color = Color3.fromRGB(50, 50, 100)
-pasteS.Thickness = 1
+	-- лёгкое idle-свечение (заметнее чем у V10.12)
+	local glow = Instance.new("ImageLabel", btn)
+	glow.Size = UDim2.new(1, 24, 1, 24)
+	glow.Position = UDim2.new(0, -12, 0, -12)
+	glow.BackgroundTransparency = 1
+	glow.Image = "rbxassetid://5028857084"
+	glow.ImageColor3 = props.glow
+	glow.ImageTransparency = 0.78
+	glow.ZIndex = btn.ZIndex - 1
 
+	-- shine-полоска сверху (highlight effect)
+	local shine = Instance.new("Frame", btn)
+	shine.Size = UDim2.new(1, -10, 0, 1)
+	shine.Position = UDim2.new(0, 5, 0, 2)
+	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	shine.BackgroundTransparency = 0.7
+	shine.BorderSizePixel = 0
+	round(shine, 1)
+
+	-- цветная вертикальная полоска-индикатор слева (вместо иконки)
+	local accent = Instance.new("Frame", btn)
+	accent.Size = UDim2.new(0, 4, 0.65, 0)
+	accent.Position = UDim2.new(0, 8, 0.175, 0)
+	accent.BackgroundColor3 = props.stroke
+	accent.BorderSizePixel = 0
+	round(accent, 2)
+	-- мини-glow на полоске
+	local accentGrad = Instance.new("UIGradient", accent)
+	accentGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, props.glow),
+		ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(1, props.glow)
+	})
+	accentGrad.Rotation = 90
+
+	-- основной лейбл, центрированный
+	local label = Instance.new("TextLabel", btn)
+	label.Size = UDim2.new(1, -20, 1, 0)
+	label.Position = UDim2.new(0, 18, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = props.text_str
+	label.TextColor3 = props.text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 12
+	label.TextXAlignment = Enum.TextXAlignment.Center
+
+	local scale = Instance.new("UIScale", btn)
+
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = props.bgHover}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.25), {ImageTransparency = 0.35}):Play()
+		TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0, Thickness = 2}):Play()
+		TweenService:Create(shine, TweenInfo.new(0.2), {BackgroundTransparency = 0.4}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = props.bg}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.25), {ImageTransparency = 0.78}):Play()
+		TweenService:Create(s, TweenInfo.new(0.2), {Transparency = 0.1, Thickness = 1.5}):Play()
+		TweenService:Create(shine, TweenInfo.new(0.2), {BackgroundTransparency = 0.7}):Play()
+	end)
+	btn.MouseButton1Down:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 0.94}):Play()
+	end)
+	btn.MouseButton1Up:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
+
+	return btn
+end
+
+local runBtn = makeActionButton(btnRow1, {
+	size = UDim2.new(0.32, -4, 1, 0), pos = UDim2.new(0, 0, 0, 0),
+	bg = Color3.fromRGB(0, 110, 45), bgHover = Color3.fromRGB(0, 150, 60),
+	gradTop = Color3.fromRGB(40, 180, 90), gradBot = Color3.fromRGB(0, 80, 30),
+	stroke = Color3.fromRGB(80, 255, 140), glow = Color3.fromRGB(0, 255, 100),
+	text = Color3.fromRGB(240, 255, 245), text_str = "EXECUTE"
+})
+
+local clearBtn = makeActionButton(btnRow1, {
+	size = UDim2.new(0.2, -4, 1, 0), pos = UDim2.new(0.32, 4, 0, 0),
+	bg = Color3.fromRGB(110, 25, 25), bgHover = Color3.fromRGB(160, 35, 35),
+	gradTop = Color3.fromRGB(180, 50, 50), gradBot = Color3.fromRGB(70, 15, 15),
+	stroke = Color3.fromRGB(255, 110, 110), glow = Color3.fromRGB(255, 60, 60),
+	text = Color3.fromRGB(255, 235, 235), text_str = "CLEAR"
+})
+
+local stopBtn = makeActionButton(btnRow1, {
+	size = UDim2.new(0.22, -4, 1, 0), pos = UDim2.new(0.52, 8, 0, 0),
+	bg = Color3.fromRGB(120, 75, 0), bgHover = Color3.fromRGB(170, 105, 0),
+	gradTop = Color3.fromRGB(200, 130, 20), gradBot = Color3.fromRGB(80, 50, 0),
+	stroke = Color3.fromRGB(255, 200, 80), glow = Color3.fromRGB(255, 170, 30),
+	text = Color3.fromRGB(255, 245, 220), text_str = "STOP"
+})
+
+local pasteBtn = makeActionButton(btnRow1, {
+	size = UDim2.new(0.22, -4, 1, 0), pos = UDim2.new(0.74, 12, 0, 0),
+	bg = Color3.fromRGB(55, 55, 110), bgHover = Color3.fromRGB(80, 80, 155),
+	gradTop = Color3.fromRGB(110, 110, 200), gradBot = Color3.fromRGB(35, 35, 75),
+	stroke = Color3.fromRGB(170, 170, 255), glow = Color3.fromRGB(140, 140, 255),
+	text = Color3.fromRGB(240, 240, 255), text_str = "PASTE"
+})
+
+-- ===== PERSIST BACKDOOR (Frame-обёртка + TextButton без градиента на тексте) =====
 local persistBtn = Instance.new("TextButton", pages.Exec)
-persistBtn.Size = UDim2.new(0.94, 0, 0, 30)
+persistBtn.Size = UDim2.new(0.94, 0, 0, 32)
 persistBtn.Position = UDim2.new(0.03, 0, 0, 290)
-persistBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-persistBtn.Text = "PERSIST BACKDOOR"
-persistBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
-persistBtn.Font = Enum.Font.GothamBold
-persistBtn.TextSize = 10
-round(persistBtn, 6)
-local persistStroke = Instance.new("UIStroke", persistBtn)
-persistStroke.Color = Color3.fromRGB(100, 60, 0)
-persistStroke.Thickness = 1
+persistBtn.BackgroundColor3 = Color3.fromRGB(180, 110, 10)
+persistBtn.Text = ""  -- текст в отдельном TextLabel ниже, чтобы UIGradient не убил его
+persistBtn.AutoButtonColor = false
+persistBtn.BorderSizePixel = 0
+round(persistBtn, 8)
 
-addButtonEffects(runBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
-addButtonEffects(clearBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
-addButtonEffects(stopBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
-addButtonEffects(pasteBtn, Color3.fromRGB(20, 20, 20), Color3.fromRGB(35, 35, 35))
+-- градиент фона (тёмно-оранжевый снизу к ярко-оранжевому сверху)
+local persistGrad = Instance.new("UIGradient", persistBtn)
+persistGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 170, 50)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(190, 110, 10)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 60, 0))
+})
+persistGrad.Rotation = 90
+
+local persistStroke = Instance.new("UIStroke", persistBtn)
+persistStroke.Color = Color3.fromRGB(255, 220, 100)
+persistStroke.Thickness = 1.4
+persistStroke.Transparency = 0.15
+
+-- shine-полоска сверху
+local persistShine = Instance.new("Frame", persistBtn)
+persistShine.Size = UDim2.new(1, -10, 0, 1)
+persistShine.Position = UDim2.new(0, 5, 0, 2)
+persistShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+persistShine.BackgroundTransparency = 0.5
+persistShine.BorderSizePixel = 0
+persistShine.ZIndex = 2
+
+-- акцентная полоска слева
+local persistAccent = Instance.new("Frame", persistBtn)
+persistAccent.Size = UDim2.new(0, 4, 0.65, 0)
+persistAccent.Position = UDim2.new(0, 8, 0.175, 0)
+persistAccent.BackgroundColor3 = Color3.fromRGB(255, 240, 120)
+persistAccent.BorderSizePixel = 0
+persistAccent.ZIndex = 3
+round(persistAccent, 2)
+local paGrad = Instance.new("UIGradient", persistAccent)
+paGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 100)),
+	ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 220, 100))
+})
+paGrad.Rotation = 90
+
+-- glow halo
+local persistGlow = Instance.new("ImageLabel", persistBtn)
+persistGlow.Size = UDim2.new(1, 20, 1, 20)
+persistGlow.Position = UDim2.new(0, -10, 0, -10)
+persistGlow.BackgroundTransparency = 1
+persistGlow.Image = "rbxassetid://5028857084"
+persistGlow.ImageColor3 = Color3.fromRGB(255, 170, 30)
+persistGlow.ImageTransparency = 0.85
+persistGlow.ZIndex = 0
+
+-- ОТДЕЛЬНЫЙ TextLabel — чтобы UIGradient на родителе не перекрашивал текст
+local persistText = Instance.new("TextLabel", persistBtn)
+persistText.Size = UDim2.new(1, 0, 1, 0)
+persistText.BackgroundTransparency = 1
+persistText.Text = "PERSIST BACKDOOR"
+persistText.TextColor3 = Color3.fromRGB(255, 255, 245)
+persistText.Font = Enum.Font.GothamBold
+persistText.TextSize = 12
+persistText.TextXAlignment = Enum.TextXAlignment.Center
+persistText.ZIndex = 4
+local persistTextStroke = Instance.new("UIStroke", persistText)
+persistTextStroke.Color = Color3.fromRGB(80, 40, 0)
+persistTextStroke.Thickness = 1.2
+persistTextStroke.Transparency = 0.3
+
+local persistScale = Instance.new("UIScale", persistBtn)
+
+local function applyPersistColors(state, hover)
+	-- state: nil=idle, true=persisted; hover: true=hover
+	local grad
+	if state then
+		-- зелёные градиенты после успеха
+		grad = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, hover and Color3.fromRGB(100, 240, 130) or Color3.fromRGB(70, 200, 100)),
+			ColorSequenceKeypoint.new(0.5, hover and Color3.fromRGB(40, 160, 60) or Color3.fromRGB(20, 110, 35)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 50, 15))
+		})
+		persistStroke.Color = Color3.fromRGB(140, 255, 160)
+		persistAccent.BackgroundColor3 = Color3.fromRGB(180, 255, 200)
+		persistGlow.ImageColor3 = Color3.fromRGB(80, 255, 120)
+		persistTextStroke.Color = Color3.fromRGB(0, 60, 20)
+	else
+		grad = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, hover and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 170, 50)),
+			ColorSequenceKeypoint.new(0.5, hover and Color3.fromRGB(220, 140, 20) or Color3.fromRGB(190, 110, 10)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 60, 0))
+		})
+		persistTextStroke.Color = Color3.fromRGB(80, 40, 0)
+	end
+	persistGrad.Color = grad
+end
 
 persistBtn.MouseEnter:Connect(function()
-	if not persisted then
-		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 10)}):Play()
-	else
-		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(10, 50, 10)}):Play()
-	end
+	applyPersistColors(persisted, true)
+	TweenService:Create(persistGlow, TweenInfo.new(0.2), {ImageTransparency = 0.5}):Play()
+	TweenService:Create(persistStroke, TweenInfo.new(0.2), {Transparency = 0, Thickness = 1.8}):Play()
 end)
 persistBtn.MouseLeave:Connect(function()
-	if not persisted then
-		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)}):Play()
-	else
-		TweenService:Create(persistBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(10, 35, 10)}):Play()
-	end
+	applyPersistColors(persisted, false)
+	TweenService:Create(persistGlow, TweenInfo.new(0.2), {ImageTransparency = 0.85}):Play()
+	TweenService:Create(persistStroke, TweenInfo.new(0.2), {Transparency = 0.15, Thickness = 1.4}):Play()
+end)
+persistBtn.MouseButton1Down:Connect(function()
+	TweenService:Create(persistScale, TweenInfo.new(0.08), {Scale = 0.97}):Play()
+end)
+persistBtn.MouseButton1Up:Connect(function()
+	TweenService:Create(persistScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
 end)
 
 local consoleScroll = Instance.new("ScrollingFrame", pages.Console)
@@ -676,21 +1400,72 @@ consoleCountLabel.Font = Enum.Font.Gotham
 consoleCountLabel.TextSize = 10
 consoleCountLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local searchBar = Instance.new("TextBox", pages.Scripts)
-searchBar.Size = UDim2.new(0.92, 0, 0, 30)
-searchBar.Position = UDim2.new(0.04, 0, 0, 5)
-searchBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+-- ===== SEARCH BAR (premium) =====
+local searchBg = Instance.new("Frame", pages.Scripts)
+searchBg.Size = UDim2.new(0.92, 0, 0, 30)
+searchBg.Position = UDim2.new(0.04, 0, 0, 5)
+searchBg.BackgroundColor3 = Color3.fromRGB(18, 14, 18)
+searchBg.BorderSizePixel = 0
+round(searchBg, 8)
+local searchBgGrad = Instance.new("UIGradient", searchBg)
+searchBgGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 25)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 8, 12))
+})
+searchBgGrad.Rotation = 90
+
+local searchStroke = Instance.new("UIStroke", searchBg)
+searchStroke.Color = Color3.fromRGB(120, 50, 60)
+searchStroke.Thickness = 1.2
+searchStroke.Transparency = 0.4
+
+-- иконка поиска (две круглых рамки изображающие лупу через Frame)
+local searchIcon = Instance.new("Frame", searchBg)
+searchIcon.Size = UDim2.new(0, 10, 0, 10)
+searchIcon.Position = UDim2.new(0, 10, 0.5, -5)
+searchIcon.BackgroundTransparency = 1
+searchIcon.BorderSizePixel = 0
+round(searchIcon, 5)
+local searchIconStroke = Instance.new("UIStroke", searchIcon)
+searchIconStroke.Color = Color3.fromRGB(180, 100, 110)
+searchIconStroke.Thickness = 1.5
+local searchIconHandle = Instance.new("Frame", searchBg)
+searchIconHandle.Size = UDim2.new(0, 5, 0, 1.5)
+searchIconHandle.Position = UDim2.new(0, 19, 0.5, 4)
+searchIconHandle.BackgroundColor3 = Color3.fromRGB(180, 100, 110)
+searchIconHandle.BorderSizePixel = 0
+searchIconHandle.Rotation = 45
+
+local searchBar = Instance.new("TextBox", searchBg)
+searchBar.Size = UDim2.new(1, -36, 1, 0)
+searchBar.Position = UDim2.new(0, 30, 0, 0)
+searchBar.BackgroundTransparency = 1
 searchBar.PlaceholderText = "Search scripts..."
-searchBar.PlaceholderColor3 = Color3.fromRGB(70, 70, 70)
+searchBar.PlaceholderColor3 = Color3.fromRGB(110, 90, 100)
 searchBar.Text = ""
-searchBar.TextColor3 = Color3.fromRGB(220, 220, 220)
-searchBar.Font = Enum.Font.Gotham
+searchBar.TextColor3 = Color3.fromRGB(240, 230, 235)
+searchBar.Font = Enum.Font.GothamMedium
 searchBar.TextSize = 12
 searchBar.ClearTextOnFocus = false
 searchBar.TextXAlignment = Enum.TextXAlignment.Left
-round(searchBar, 8)
-Instance.new("UIPadding", searchBar).PaddingLeft = UDim.new(0, 10)
-Instance.new("UIStroke", searchBar).Color = Color3.fromRGB(50, 0, 0)
+
+local searchGlow = Instance.new("ImageLabel", searchBg)
+searchGlow.Size = UDim2.new(1, 16, 1, 16)
+searchGlow.Position = UDim2.new(0, -8, 0, -8)
+searchGlow.BackgroundTransparency = 1
+searchGlow.Image = "rbxassetid://5028857084"
+searchGlow.ImageColor3 = Color3.fromRGB(255, 80, 80)
+searchGlow.ImageTransparency = 1
+searchGlow.ZIndex = 0
+
+searchBar.Focused:Connect(function()
+	TweenService:Create(searchStroke, TweenInfo.new(0.25), {Transparency = 0, Color = Color3.fromRGB(255, 100, 110), Thickness = 1.5}):Play()
+	TweenService:Create(searchGlow, TweenInfo.new(0.3), {ImageTransparency = 0.65}):Play()
+end)
+searchBar.FocusLost:Connect(function()
+	TweenService:Create(searchStroke, TweenInfo.new(0.25), {Transparency = 0.4, Color = Color3.fromRGB(120, 50, 60), Thickness = 1.2}):Play()
+	TweenService:Create(searchGlow, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
+end)
 
 local catFrame = Instance.new("Frame", pages.Scripts)
 catFrame.Size = UDim2.new(0.92, 0, 0, 24)
@@ -705,15 +1480,66 @@ local categories = {"ALL", "TROLL", "SERVER", "VISUAL", "CHAOS", "PROTECT"}
 local catButtons = {}
 local activeCategory = "ALL"
 
+local function styleCatBtn(cb, isActive)
+	if isActive then
+		cb.BackgroundColor3 = Color3.fromRGB(180, 40, 65)
+		cb.TextColor3 = Color3.new(1, 1, 1)
+	else
+		cb.BackgroundColor3 = Color3.fromRGB(28, 24, 32)
+		cb.TextColor3 = Color3.fromRGB(235, 235, 245)
+	end
+end
+
 for _, cat in ipairs(categories) do
 	local cb = Instance.new("TextButton", catFrame)
-	cb.Size = UDim2.new(0, 52, 0, 22)
-	cb.BackgroundColor3 = cat == "ALL" and Color3.fromRGB(100, 10, 10) or Color3.fromRGB(30, 30, 30)
+	cb.Size = UDim2.new(0, 56, 0, 22)
 	cb.Text = cat
-	cb.TextColor3 = cat == "ALL" and Color3.new(1,1,1) or Color3.fromRGB(120, 120, 120)
 	cb.Font = Enum.Font.GothamBold
 	cb.TextSize = 9
-	round(cb, 6)
+	cb.AutoButtonColor = false
+	cb.BorderSizePixel = 0
+	round(cb, 11)
+
+	local cbGrad = Instance.new("UIGradient", cb)
+	cbGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 38, 50)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 16, 26))
+	})
+	cbGrad.Rotation = 90
+
+	local cbStroke = Instance.new("UIStroke", cb)
+	cbStroke.Color = Color3.fromRGB(180, 70, 90)
+	cbStroke.Thickness = 1.3
+	cbStroke.Transparency = 0.3
+
+	local catShine = Instance.new("Frame", cb)
+	catShine.Size = UDim2.new(1, -8, 0, 1)
+	catShine.Position = UDim2.new(0, 4, 0, 2)
+	catShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	catShine.BackgroundTransparency = 0.7
+	catShine.BorderSizePixel = 0
+	catShine.ZIndex = 3
+
+	if cat == "ALL" then
+		cbGrad.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 70, 100)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 25, 50))
+		})
+		cbStroke.Color = Color3.fromRGB(255, 110, 130)
+		cbStroke.Transparency = 0
+		cbStroke.Thickness = 1.6
+	end
+
+	local function styleThis(isActive)
+		if isActive then
+			cb.BackgroundColor3 = Color3.fromRGB(180, 40, 65)
+			cb.TextColor3 = Color3.new(1, 1, 1)
+		else
+			cb.BackgroundColor3 = Color3.fromRGB(28, 24, 32)
+			cb.TextColor3 = Color3.fromRGB(235, 235, 245)
+		end
+	end
+	styleThis(cat == "ALL")
 	catButtons[cat] = cb
 end
 
@@ -729,59 +1555,138 @@ local sList = Instance.new("UIListLayout", scriptsScroll)
 sList.Padding = UDim.new(0, 6)
 sList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local statusBar = Instance.new("Frame", mainFrame)
-statusBar.Size = UDim2.new(1, 0, 0, 22)
-statusBar.Position = UDim2.new(0, 0, 1, -22)
-statusBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-statusBar.BackgroundTransparency = 0.2
+statusBar = Instance.new("Frame", mainFrame)
+statusBar.Size = UDim2.new(1, 0, 0, 24)
+statusBar.Position = UDim2.new(0, 0, 1, -24)
+statusBar.BackgroundColor3 = Color3.fromRGB(12, 8, 10)
+statusBar.BackgroundTransparency = 0.05
 statusBar.BorderSizePixel = 0
 round(statusBar, 10)
 
+-- градиент в фон status-бара (тёмный → чуть красноватый)
+local statusBarGrad = Instance.new("UIGradient", statusBar)
+statusBarGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 12, 14)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 6, 8)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 8, 12))
+})
+
+-- тонкая обводка сверху (отделяет от контента)
+local statusBarTopLine = Instance.new("Frame", statusBar)
+statusBarTopLine.Size = UDim2.new(1, -20, 0, 1)
+statusBarTopLine.Position = UDim2.new(0, 10, 0, 0)
+statusBarTopLine.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+statusBarTopLine.BackgroundTransparency = 0.7
+statusBarTopLine.BorderSizePixel = 0
+
+-- ===== status dot с halo =====
+local statusDotGlow = Instance.new("ImageLabel", statusBar)
+statusDotGlow.Size = UDim2.new(0, 22, 0, 22)
+statusDotGlow.Position = UDim2.new(0, 1, 0.5, -11)
+statusDotGlow.BackgroundTransparency = 1
+statusDotGlow.Image = "rbxassetid://5028857084"
+statusDotGlow.ImageColor3 = Color3.fromRGB(120, 120, 120)
+statusDotGlow.ImageTransparency = 0.5
+statusDotGlow.ZIndex = 2
+
 local statusDot = Instance.new("Frame", statusBar)
 statusDot.Size = UDim2.new(0, 8, 0, 8)
-statusDot.Position = UDim2.new(0, 10, 0.5, -4)
-statusDot.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+statusDot.Position = UDim2.new(0, 8, 0.5, -4)
+statusDot.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
 statusDot.BorderSizePixel = 0
+statusDot.ZIndex = 3
 round(statusDot, 4)
+local statusDotHi = Instance.new("Frame", statusDot)
+statusDotHi.Size = UDim2.new(0, 3, 0, 3)
+statusDotHi.Position = UDim2.new(0, 1, 0, 1)
+statusDotHi.BackgroundColor3 = Color3.new(1, 1, 1)
+statusDotHi.BackgroundTransparency = 0.4
+statusDotHi.BorderSizePixel = 0
+statusDotHi.ZIndex = 4
+round(statusDotHi, 2)
 
 local statusText = Instance.new("TextLabel", statusBar)
 statusText.Size = UDim2.new(0.35, 0, 1, 0)
 statusText.Position = UDim2.new(0, 24, 0, 0)
 statusText.Text = "Connecting..."
-statusText.TextColor3 = Color3.fromRGB(120, 120, 120)
-statusText.Font = Enum.Font.Gotham
+statusText.TextColor3 = Color3.fromRGB(180, 180, 190)
+statusText.Font = Enum.Font.GothamMedium
 statusText.TextSize = 10
 statusText.TextXAlignment = Enum.TextXAlignment.Left
 statusText.BackgroundTransparency = 1
+statusText.ZIndex = 3
+
+-- ===== FPS с цветной иконкой-чипом =====
+local fpsChip = Instance.new("Frame", statusBar)
+fpsChip.Size = UDim2.new(0, 4, 0, 12)
+fpsChip.Position = UDim2.new(0.42, -10, 0.5, -6)
+fpsChip.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+fpsChip.BorderSizePixel = 0
+fpsChip.ZIndex = 3
+round(fpsChip, 2)
 
 local fpsLabel = Instance.new("TextLabel", statusBar)
-fpsLabel.Size = UDim2.new(0, 50, 1, 0)
+fpsLabel.Size = UDim2.new(0, 55, 1, 0)
 fpsLabel.Position = UDim2.new(0.42, 0, 0, 0)
 fpsLabel.BackgroundTransparency = 1
 fpsLabel.Text = "0 FPS"
-fpsLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+fpsLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 fpsLabel.Font = Enum.Font.Code
-fpsLabel.TextSize = 9
+fpsLabel.TextSize = 10
+fpsLabel.ZIndex = 3
+
+-- разделитель
+local sep1 = Instance.new("Frame", statusBar)
+sep1.Size = UDim2.new(0, 1, 0, 12)
+sep1.Position = UDim2.new(0.51, 0, 0.5, -6)
+sep1.BackgroundColor3 = Color3.fromRGB(80, 40, 50)
+sep1.BackgroundTransparency = 0.4
+sep1.BorderSizePixel = 0
+sep1.ZIndex = 3
+
+-- ===== uptime с иконкой-точкой =====
+local uptimeIcon = Instance.new("Frame", statusBar)
+uptimeIcon.Size = UDim2.new(0, 4, 0, 4)
+uptimeIcon.Position = UDim2.new(0.53, 0, 0.5, -2)
+uptimeIcon.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+uptimeIcon.BorderSizePixel = 0
+uptimeIcon.ZIndex = 3
+round(uptimeIcon, 2)
 
 local uptimeLabel = Instance.new("TextLabel", statusBar)
 uptimeLabel.Size = UDim2.new(0, 60, 1, 0)
-uptimeLabel.Position = UDim2.new(0.52, 0, 0, 0)
+uptimeLabel.Position = UDim2.new(0.53, 8, 0, 0)
 uptimeLabel.BackgroundTransparency = 1
 uptimeLabel.Text = "00:00"
-uptimeLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+uptimeLabel.TextColor3 = Color3.fromRGB(255, 220, 130)
 uptimeLabel.Font = Enum.Font.Code
-uptimeLabel.TextSize = 9
+uptimeLabel.TextSize = 10
+uptimeLabel.ZIndex = 3
 
+-- ===== player info справа =====
 local playerInfo = Instance.new("TextLabel", statusBar)
-playerInfo.Size = UDim2.new(0.3, 0, 1, 0)
+playerInfo.Size = UDim2.new(0.3, -10, 1, 0)
 playerInfo.Position = UDim2.new(0.7, 0, 0, 0)
 playerInfo.Text = Players.LocalPlayer.Name
-playerInfo.TextColor3 = Color3.fromRGB(100, 100, 100)
-playerInfo.Font = Enum.Font.Gotham
+playerInfo.TextColor3 = Color3.fromRGB(220, 180, 200)
+playerInfo.Font = Enum.Font.GothamMedium
 playerInfo.TextSize = 10
 playerInfo.TextXAlignment = Enum.TextXAlignment.Right
 playerInfo.BackgroundTransparency = 1
-Instance.new("UIPadding", playerInfo).PaddingRight = UDim.new(0, 10)
+playerInfo.ZIndex = 3
+Instance.new("UIPadding", playerInfo).PaddingRight = UDim.new(0, 12)
+
+-- (playerDot убран в V10.12 — он позиционировался поверх первой буквы имени)
+
+-- лёгкая пульсация status-dot glow
+task.spawn(function()
+	while statusDotGlow and statusDotGlow.Parent do
+		TweenService:Create(statusDotGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.7}):Play()
+		task.wait(1.5)
+		TweenService:Create(statusDotGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.4}):Play()
+		task.wait(1.5)
+	end
+end)
 
 local lastFpsUpdate = tick()
 local frameCount = 0
@@ -860,13 +1765,15 @@ end
 
 local function updateStatus()
 	if backdoor then
-		statusDot.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+		statusDot.BackgroundColor3 = Color3.fromRGB(50, 230, 120)
+		statusDotGlow.ImageColor3 = Color3.fromRGB(0, 255, 100)
 		statusText.Text = "Connected: " .. backdoor.Name
-		statusText.TextColor3 = Color3.fromRGB(0, 180, 0)
+		statusText.TextColor3 = Color3.fromRGB(120, 230, 150)
 	else
-		statusDot.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+		statusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+		statusDotGlow.ImageColor3 = Color3.fromRGB(255, 50, 50)
 		statusText.Text = "Offline Mode"
-		statusText.TextColor3 = Color3.fromRGB(180, 0, 0)
+		statusText.TextColor3 = Color3.fromRGB(255, 130, 130)
 	end
 end
 
@@ -925,10 +1832,9 @@ end)
 			persisted = true
 			addLog("kr_backup confirmed on server", "success")
 			notify("Persist confirmed!", "success")
-			persistBtn.Text = "PERSISTED"
-			persistBtn.BackgroundColor3 = Color3.fromRGB(10, 35, 10)
-			persistStroke.Color = Color3.fromRGB(0, 120, 0)
-			persistBtn.TextColor3 = Color3.fromRGB(0, 220, 0)
+			persistText.Text = "PERSISTED"
+			persistText.TextColor3 = Color3.fromRGB(230, 255, 235)
+			applyPersistColors(true, false)
 		else
 			addLog("kr_backup not found, persist may have failed", "warn")
 			notify("Persist unconfirmed", "warn")
@@ -943,9 +1849,10 @@ local function watchBackdoor()
 		if newParent == nil then
 			addLog("Backdoor destroyed! Rescanning...", "error")
 			notify("Backdoor lost! Reconnecting...", "error")
-			statusDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+			statusDot.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+			statusDotGlow.ImageColor3 = Color3.fromRGB(255, 180, 0)
 			statusText.Text = "Reconnecting..."
-			statusText.TextColor3 = Color3.fromRGB(255, 200, 0)
+			statusText.TextColor3 = Color3.fromRGB(255, 220, 100)
 
 			backdoor = nil
 
@@ -980,11 +1887,25 @@ local catColors = {
 for i, data in ipairs(library) do
 	local b = Instance.new("TextButton", scriptsScroll)
 	b.Size = UDim2.new(0.92, 0, 0, 40)
-	b.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	b.BackgroundColor3 = Color3.fromRGB(22, 18, 22)
 	b.Text = ""
 	b.AutoButtonColor = false
+	b.BorderSizePixel = 0
 	b.Name = "script_" .. i
 	round(b, 8)
+
+	-- градиент строки
+	local bGrad = Instance.new("UIGradient", b)
+	bGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(32, 24, 30)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 12, 18))
+	})
+	bGrad.Rotation = 90
+
+	local bStroke = Instance.new("UIStroke", b)
+	bStroke.Color = Color3.fromRGB(80, 30, 40)
+	bStroke.Thickness = 1
+	bStroke.Transparency = 0.5
 
 	local accent = Instance.new("Frame", b)
 	accent.Size = UDim2.new(0, 3, 0.7, 0)
@@ -992,66 +1913,133 @@ for i, data in ipairs(library) do
 	accent.BackgroundColor3 = catColors[data.cat] or Color3.fromRGB(200, 0, 0)
 	accent.BorderSizePixel = 0
 	round(accent, 2)
+	-- мини-glow градиент в полоске
+	local accGrad = Instance.new("UIGradient", accent)
+	accGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, catColors[data.cat] or Color3.fromRGB(200, 0, 0)),
+		ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(1, catColors[data.cat] or Color3.fromRGB(200, 0, 0))
+	})
+	accGrad.Rotation = 90
 
 	local catTag = Instance.new("TextLabel", b)
-	catTag.Size = UDim2.new(0, 42, 0, 16)
-	catTag.Position = UDim2.new(0, 14, 0.5, -8)
+	catTag.Size = UDim2.new(0, 44, 0, 18)
+	catTag.Position = UDim2.new(0, 14, 0.5, -9)
 	catTag.BackgroundColor3 = catColors[data.cat] or Color3.fromRGB(100, 0, 0)
-	catTag.BackgroundTransparency = 0.6
+	catTag.BackgroundTransparency = 0.5
 	catTag.Text = data.cat
 	catTag.TextColor3 = Color3.new(1, 1, 1)
 	catTag.Font = Enum.Font.GothamBold
 	catTag.TextSize = 7
-	round(catTag, 4)
+	round(catTag, 5)
+	local catTagStroke = Instance.new("UIStroke", catTag)
+	catTagStroke.Color = catColors[data.cat] or Color3.fromRGB(200, 0, 0)
+	catTagStroke.Thickness = 1
+	catTagStroke.Transparency = 0.4
 
 	local label = Instance.new("TextLabel", b)
-	label.Size = UDim2.new(1, -130, 1, 0)
-	label.Position = UDim2.new(0, 62, 0, 0)
+	label.Size = UDim2.new(1, -140, 1, 0)
+	label.Position = UDim2.new(0, 64, 0, 0)
 	label.Text = data.n
-	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextColor3 = Color3.fromRGB(235, 235, 240)
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 11
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.BackgroundTransparency = 1
 
+	-- ===== Ed (copy-to-editor) =====
 	local copyBtn = Instance.new("TextButton", b)
-	copyBtn.Size = UDim2.new(0, 30, 0, 26)
-	copyBtn.Position = UDim2.new(1, -70, 0.5, -13)
-	copyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+	copyBtn.Size = UDim2.new(0, 32, 0, 26)
+	copyBtn.Position = UDim2.new(1, -72, 0.5, -13)
+	copyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 130)
 	copyBtn.Text = "Ed"
-	copyBtn.TextColor3 = Color3.fromRGB(150, 150, 255)
+	copyBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
 	copyBtn.Font = Enum.Font.GothamBold
 	copyBtn.TextSize = 9
+	copyBtn.AutoButtonColor = false
+	copyBtn.BorderSizePixel = 0
 	round(copyBtn, 6)
+	local copyGrad = Instance.new("UIGradient", copyBtn)
+	copyGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(110, 110, 200)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 90))
+	})
+	copyGrad.Rotation = 90
+	local copyStroke = Instance.new("UIStroke", copyBtn)
+	copyStroke.Color = Color3.fromRGB(160, 160, 255)
+	copyStroke.Thickness = 1
+	copyStroke.Transparency = 0.3
+	local copyScale = Instance.new("UIScale", copyBtn)
 
+	copyBtn.MouseEnter:Connect(function()
+		TweenService:Create(copyStroke, TweenInfo.new(0.15), {Transparency = 0, Thickness = 1.4}):Play()
+	end)
+	copyBtn.MouseLeave:Connect(function()
+		TweenService:Create(copyStroke, TweenInfo.new(0.15), {Transparency = 0.3, Thickness = 1}):Play()
+	end)
+	copyBtn.MouseButton1Down:Connect(function()
+		TweenService:Create(copyScale, TweenInfo.new(0.08), {Scale = 0.88}):Play()
+	end)
+	copyBtn.MouseButton1Up:Connect(function()
+		TweenService:Create(copyScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
 	copyBtn.MouseButton1Click:Connect(function()
+		-- НЕ присваиваем editor.Text сразу, чтобы UIGradient тоже не было проблем; копируем как есть
 		editor.Text = data.c
+		-- В пустой текст кнопки сделаем "копированно" мигающим если нужно — пропустим
 		notify("Copied to editor: " .. data.n, "info")
 		addLog("Loaded to editor: " .. data.n, "info")
 	end)
 
+	-- ===== >> (execute) =====
 	local execBtn = Instance.new("TextButton", b)
-	execBtn.Size = UDim2.new(0, 30, 0, 26)
+	execBtn.Size = UDim2.new(0, 32, 0, 26)
 	execBtn.Position = UDim2.new(1, -36, 0.5, -13)
-	execBtn.BackgroundColor3 = Color3.fromRGB(0, 60, 0)
+	execBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 40)
 	execBtn.Text = ">>"
-	execBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+	execBtn.TextColor3 = Color3.fromRGB(220, 255, 230)
 	execBtn.Font = Enum.Font.GothamBold
-	execBtn.TextSize = 10
+	execBtn.TextSize = 11
+	execBtn.AutoButtonColor = false
+	execBtn.BorderSizePixel = 0
 	round(execBtn, 6)
+	local execGrad = Instance.new("UIGradient", execBtn)
+	execGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 180, 90)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 70, 25))
+	})
+	execGrad.Rotation = 90
+	local execStroke = Instance.new("UIStroke", execBtn)
+	execStroke.Color = Color3.fromRGB(80, 230, 130)
+	execStroke.Thickness = 1
+	execStroke.Transparency = 0.3
+	local execScale = Instance.new("UIScale", execBtn)
 
+	execBtn.MouseEnter:Connect(function()
+		TweenService:Create(execStroke, TweenInfo.new(0.15), {Transparency = 0, Thickness = 1.4}):Play()
+	end)
+	execBtn.MouseLeave:Connect(function()
+		TweenService:Create(execStroke, TweenInfo.new(0.15), {Transparency = 0.3, Thickness = 1}):Play()
+	end)
+	execBtn.MouseButton1Down:Connect(function()
+		TweenService:Create(execScale, TweenInfo.new(0.08), {Scale = 0.88}):Play()
+	end)
+	execBtn.MouseButton1Up:Connect(function()
+		TweenService:Create(execScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
 	execBtn.MouseButton1Click:Connect(function()
 		execute(data.c)
 		addLog("Library: " .. data.n, "info")
 	end)
 
-	Instance.new("UIStroke", b).Color = Color3.fromRGB(50, 0, 0)
-
+	-- hover эффект всей строки
 	b.MouseEnter:Connect(function()
-		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 8, 8)}):Play()
+		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 25, 30)}):Play()
+		TweenService:Create(bStroke, TweenInfo.new(0.2), {Transparency = 0.2, Color = Color3.fromRGB(180, 60, 80)}):Play()
 	end)
 	b.MouseLeave:Connect(function()
-		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(18, 18, 18)}):Play()
+		TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(22, 18, 22)}):Play()
+		TweenService:Create(bStroke, TweenInfo.new(0.2), {Transparency = 0.5, Color = Color3.fromRGB(80, 30, 40)}):Play()
 	end)
 
 	table.insert(scriptButtons, {btn = b, name = data.n, cat = data.cat})
@@ -1074,11 +2062,45 @@ local function filterScripts()
 end
 
 for cat, cb in pairs(catButtons) do
+	local catScale = Instance.new("UIScale", cb)
+	cb.MouseButton1Down:Connect(function()
+		TweenService:Create(catScale, TweenInfo.new(0.08), {Scale = 0.92}):Play()
+	end)
+	cb.MouseButton1Up:Connect(function()
+		TweenService:Create(catScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
+	cb.MouseEnter:Connect(function()
+		if activeCategory ~= cat then
+			TweenService:Create(cb, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 42, 55)}):Play()
+		end
+	end)
+	cb.MouseLeave:Connect(function()
+		if activeCategory ~= cat then
+			TweenService:Create(cb, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(28, 24, 32)}):Play()
+		end
+	end)
+
 	cb.MouseButton1Click:Connect(function()
 		activeCategory = cat
 		for c, btn in pairs(catButtons) do
-			btn.BackgroundColor3 = c == cat and Color3.fromRGB(100, 10, 10) or Color3.fromRGB(30, 30, 30)
-			btn.TextColor3 = c == cat and Color3.new(1,1,1) or Color3.fromRGB(120, 120, 120)
+			local isActive = c == cat
+			styleCatBtn(btn, isActive)
+			local btnGrad = btn:FindFirstChildOfClass("UIGradient")
+			local btnStroke = btn:FindFirstChildOfClass("UIStroke")
+			if btnGrad then
+				btnGrad.Color = isActive and ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 70, 100)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 25, 50))
+				}) or ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 38, 50)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 16, 26))
+				})
+			end
+			if btnStroke then
+				btnStroke.Color = isActive and Color3.fromRGB(255, 110, 130) or Color3.fromRGB(180, 70, 90)
+				btnStroke.Transparency = isActive and 0 or 0.3
+				btnStroke.Thickness = isActive and 1.6 or 1.3
+			end
 		end
 		filterScripts()
 	end)
@@ -1271,6 +2293,73 @@ rescanBtn.MouseButton1Click:Connect(function()
 end)
 
 local updateLog = {
+	{ver = "V10.12 PATCH", entries = {
+		{type = "add", text = "NEW: REDPL tab — Character Editor (BETA)"},
+		{type = "add", text = "REDPL: WalkSpeed, JumpPower, HipHeight, Health, Gravity, FOV"},
+		{type = "add", text = "REDPL: live values, APPLY button, RESET ALL"},
+		{type = "fix", text = "Tabs no longer pink/raspberry — now charcoal with red stroke"},
+		{type = "fix", text = "Categories follow same charcoal style"},
+	}},
+	{ver = "V10.11 PATCH", entries = {
+		{type = "add", text = "Tabs glossy with shine line"},
+		{type = "add", text = "Active tab brighter, thicker stroke"},
+		{type = "add", text = "Underline under active tab thicker (3px) with tri-color"},
+		{type = "add", text = "Main frame stroke brighter, thickness 2"},
+	}},
+	{ver = "V10.10 PATCH", entries = {
+		{type = "fix", text = "Halo glow doesn't leak outside frame (was 800x630, now 710x540)"},
+		{type = "fix", text = "Player dot in status bar removed (overlapped 'i' in name)"},
+		{type = "add", text = "Script entries: gradient bg, hover glow, accent bar with shine"},
+		{type = "add", text = "Ed/>> buttons: gradient, stroke, scale-on-click animation"},
+	}},
+	{ver = "V10.9 PATCH", entries = {
+		{type = "fix", text = "Tabs no longer overlap with version badge (shifted +20px)"},
+		{type = "fix", text = "Tabs much brighter: default (80,55,65) — visible on red"},
+		{type = "fix", text = "PERSIST text was darkened by UIGradient — now in separate label"},
+	}},
+	{ver = "V10.8 PATCH", entries = {
+		{type = "add", text = "Editor: gradient bg, focus glow halo, animated stroke"},
+		{type = "add", text = "Editor accent bar: gradient with white center highlight"},
+		{type = "add", text = "Search bar: lupe icon, focus glow, gradient bg"},
+		{type = "add", text = "Category buttons: pill-style with gradient + neon stroke"},
+	}},
+	{ver = "V10.7 PATCH", entries = {
+		{type = "fix", text = "Tabs visibility: brighter bg, contrast border"},
+		{type = "fix", text = "Version badge: split into bg+text so text stays readable"},
+	}},
+	{ver = "V10.6 PATCH", entries = {
+		{type = "add", text = "Header: KR title with neon gradient, glow halo, version badge"},
+		{type = "add", text = "Tabs: gradient bg, neon stroke + glow when active"},
+		{type = "add", text = "Close/Minimize: glossy circles with halo on hover"},
+		{type = "add", text = "Persist button: gradient, accent bar, glow, shine on top"},
+	}},
+	{ver = "V10.5 PATCH", entries = {
+		{type = "fix", text = "Loader: progress bar no longer leaks across screen"},
+		{type = "fix", text = "Status text positioned right of spinner, no overlap"},
+		{type = "fix", text = "'Created by Krsp Team' duplication removed"},
+		{type = "fix", text = "Removed competing task.spawn that flickered status text"},
+	}},
+	{ver = "V10.4 PATCH", entries = {
+		{type = "add", text = "Brand new loader: spinner ring, halo, neon title"},
+		{type = "add", text = "Smooth fade-out of all loader elements on finish"},
+		{type = "add", text = "Progress bar with running shine and color gradient"},
+	}},
+	{ver = "V10.3 PATCH", entries = {
+		{type = "fix", text = "REAL minimize fix: pages and statusBar forward-declared"},
+		{type = "fix", text = "pcall guards added so nil ref cannot break minimize"},
+		{type = "add", text = "KR toggle: glossy gradient, halo glow, pulse animation"},
+		{type = "add", text = "KR text now has shadow + stroke for depth"},
+	}},
+	{ver = "V10.2 PATCH", entries = {
+		{type = "fix", text = "Unicode icons replaced with reliable color dots"},
+		{type = "add", text = "Action buttons: brighter, shine on top, accent bar"},
+		{type = "add", text = "Notification dot pulses softly while alive"},
+	}},
+	{ver = "V10.1 PATCH", entries = {
+		{type = "add", text = "Action buttons redesigned: gradients, glow on hover"},
+		{type = "add", text = "Notifications: progress bar, glow halo"},
+		{type = "fix", text = "Minimize: status bar no longer leaks under tabs"},
+	}},
 	{ver = "V10.0 RELEASE", entries = {
 		{type = "add", text = "Redesigned buttons - dark minimal style"},
 		{type = "fix", text = "Persist button color no longer resets on hover"},
@@ -1401,31 +2490,451 @@ end
 
 pages.Updates.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
 
+-- ===== REDPL · Character Editor (BETA) =====
+local redPlScrollLayout = Instance.new("UIListLayout", pages.RedPl)
+redPlScrollLayout.Padding = UDim.new(0, 6)
+redPlScrollLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local redPlPad = Instance.new("UIPadding", pages.RedPl)
+redPlPad.PaddingTop = UDim.new(0, 5)
+redPlPad.PaddingBottom = UDim.new(0, 10)
+
+-- title row
+local redPlTitle = Instance.new("Frame", pages.RedPl)
+redPlTitle.Size = UDim2.new(0.94, 0, 0, 38)
+redPlTitle.BackgroundColor3 = Color3.fromRGB(20, 16, 26)
+redPlTitle.BorderSizePixel = 0
+redPlTitle.LayoutOrder = 0
+round(redPlTitle, 8)
+local redPlTitleGrad = Instance.new("UIGradient", redPlTitle)
+redPlTitleGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 30, 50)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 12, 22))
+})
+redPlTitleGrad.Rotation = 90
+local redPlTitleStroke = Instance.new("UIStroke", redPlTitle)
+redPlTitleStroke.Color = Color3.fromRGB(255, 110, 130)
+redPlTitleStroke.Thickness = 1.4
+redPlTitleStroke.Transparency = 0.2
+
+local redPlTitleAccent = Instance.new("Frame", redPlTitle)
+redPlTitleAccent.Size = UDim2.new(0, 4, 0.65, 0)
+redPlTitleAccent.Position = UDim2.new(0, 8, 0.175, 0)
+redPlTitleAccent.BackgroundColor3 = Color3.fromRGB(255, 110, 130)
+redPlTitleAccent.BorderSizePixel = 0
+round(redPlTitleAccent, 2)
+
+local redPlHeading = Instance.new("TextLabel", redPlTitle)
+redPlHeading.Size = UDim2.new(0, 200, 1, 0)
+redPlHeading.Position = UDim2.new(0, 18, 0, 0)
+redPlHeading.BackgroundTransparency = 1
+redPlHeading.Text = "RED PL · Character Editor"
+redPlHeading.TextColor3 = Color3.fromRGB(255, 240, 245)
+redPlHeading.Font = Enum.Font.GothamBold
+redPlHeading.TextSize = 13
+redPlHeading.TextXAlignment = Enum.TextXAlignment.Left
+
+-- BETA badge
+local betaBadge = Instance.new("Frame", redPlTitle)
+betaBadge.Size = UDim2.new(0, 42, 0, 18)
+betaBadge.Position = UDim2.new(1, -52, 0.5, -9)
+betaBadge.BackgroundColor3 = Color3.fromRGB(120, 60, 0)
+betaBadge.BorderSizePixel = 0
+round(betaBadge, 5)
+local betaBadgeStroke = Instance.new("UIStroke", betaBadge)
+betaBadgeStroke.Color = Color3.fromRGB(255, 200, 80)
+betaBadgeStroke.Thickness = 1
+betaBadgeStroke.Transparency = 0.2
+local betaBadgeText = Instance.new("TextLabel", betaBadge)
+betaBadgeText.Size = UDim2.new(1, 0, 1, 0)
+betaBadgeText.BackgroundTransparency = 1
+betaBadgeText.Text = "BETA"
+betaBadgeText.TextColor3 = Color3.fromRGB(255, 220, 130)
+betaBadgeText.Font = Enum.Font.GothamBold
+betaBadgeText.TextSize = 9
+
+-- ===== вспомогательная функция: создать строку-настройку =====
+local function getHumanoid()
+	local char = Players.LocalPlayer.Character
+	return char and char:FindFirstChildOfClass("Humanoid") or nil
+end
+
+local function makeStatRow(props)
+	-- props: {label, getter, setter, default, layoutOrder}
+	local row = Instance.new("Frame", pages.RedPl)
+	row.Size = UDim2.new(0.94, 0, 0, 42)
+	row.BackgroundColor3 = Color3.fromRGB(22, 18, 24)
+	row.BorderSizePixel = 0
+	row.LayoutOrder = props.layoutOrder
+	round(row, 8)
+
+	local rowGrad = Instance.new("UIGradient", row)
+	rowGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 28, 38)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 14, 22))
+	})
+	rowGrad.Rotation = 90
+
+	local rowStroke = Instance.new("UIStroke", row)
+	rowStroke.Color = Color3.fromRGB(120, 60, 80)
+	rowStroke.Thickness = 1
+	rowStroke.Transparency = 0.4
+
+	-- акцентная полоска слева
+	local rowAccent = Instance.new("Frame", row)
+	rowAccent.Size = UDim2.new(0, 3, 0.65, 0)
+	rowAccent.Position = UDim2.new(0, 6, 0.175, 0)
+	rowAccent.BackgroundColor3 = Color3.fromRGB(255, 110, 130)
+	rowAccent.BorderSizePixel = 0
+	round(rowAccent, 2)
+
+	-- название
+	local rowLabel = Instance.new("TextLabel", row)
+	rowLabel.Size = UDim2.new(0, 110, 1, 0)
+	rowLabel.Position = UDim2.new(0, 16, 0, 0)
+	rowLabel.BackgroundTransparency = 1
+	rowLabel.Text = props.label
+	rowLabel.TextColor3 = Color3.fromRGB(235, 235, 245)
+	rowLabel.Font = Enum.Font.GothamBold
+	rowLabel.TextSize = 11
+	rowLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	-- текущее значение (live)
+	local liveValue = Instance.new("TextLabel", row)
+	liveValue.Size = UDim2.new(0, 65, 0, 18)
+	liveValue.Position = UDim2.new(0, 130, 0.5, -9)
+	liveValue.BackgroundColor3 = Color3.fromRGB(35, 30, 40)
+	liveValue.Text = "..."
+	liveValue.TextColor3 = Color3.fromRGB(180, 200, 255)
+	liveValue.Font = Enum.Font.Code
+	liveValue.TextSize = 10
+	round(liveValue, 4)
+	Instance.new("UIStroke", liveValue).Color = Color3.fromRGB(80, 80, 130)
+
+	-- TextBox для ввода нового значения
+	local inputBg = Instance.new("Frame", row)
+	inputBg.Size = UDim2.new(0, 70, 0, 24)
+	inputBg.Position = UDim2.new(1, -150, 0.5, -12)
+	inputBg.BackgroundColor3 = Color3.fromRGB(20, 16, 24)
+	inputBg.BorderSizePixel = 0
+	round(inputBg, 5)
+	local inputStroke = Instance.new("UIStroke", inputBg)
+	inputStroke.Color = Color3.fromRGB(140, 70, 90)
+	inputStroke.Thickness = 1
+	inputStroke.Transparency = 0.3
+
+	local inputBox = Instance.new("TextBox", inputBg)
+	inputBox.Size = UDim2.new(1, -8, 1, 0)
+	inputBox.Position = UDim2.new(0, 4, 0, 0)
+	inputBox.BackgroundTransparency = 1
+	inputBox.Text = ""
+	inputBox.PlaceholderText = tostring(props.default)
+	inputBox.PlaceholderColor3 = Color3.fromRGB(100, 90, 110)
+	inputBox.TextColor3 = Color3.fromRGB(255, 240, 240)
+	inputBox.Font = Enum.Font.Code
+	inputBox.TextSize = 11
+	inputBox.ClearTextOnFocus = false
+	inputBox.TextXAlignment = Enum.TextXAlignment.Center
+
+	inputBox.Focused:Connect(function()
+		TweenService:Create(inputStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 110, 130), Transparency = 0, Thickness = 1.4}):Play()
+	end)
+	inputBox.FocusLost:Connect(function()
+		TweenService:Create(inputStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(140, 70, 90), Transparency = 0.3, Thickness = 1}):Play()
+	end)
+
+	-- APPLY кнопка
+	local applyBtn = Instance.new("TextButton", row)
+	applyBtn.Size = UDim2.new(0, 60, 0, 24)
+	applyBtn.Position = UDim2.new(1, -76, 0.5, -12)
+	applyBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 45)
+	applyBtn.Text = "APPLY"
+	applyBtn.TextColor3 = Color3.fromRGB(220, 255, 230)
+	applyBtn.Font = Enum.Font.GothamBold
+	applyBtn.TextSize = 10
+	applyBtn.AutoButtonColor = false
+	applyBtn.BorderSizePixel = 0
+	round(applyBtn, 5)
+	local applyGrad = Instance.new("UIGradient", applyBtn)
+	applyGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 180, 90)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 70, 25))
+	})
+	applyGrad.Rotation = 90
+	local applyStroke = Instance.new("UIStroke", applyBtn)
+	applyStroke.Color = Color3.fromRGB(80, 230, 130)
+	applyStroke.Thickness = 1
+	applyStroke.Transparency = 0.3
+	local applyScale = Instance.new("UIScale", applyBtn)
+
+	applyBtn.MouseEnter:Connect(function()
+		TweenService:Create(applyStroke, TweenInfo.new(0.15), {Transparency = 0, Thickness = 1.4}):Play()
+	end)
+	applyBtn.MouseLeave:Connect(function()
+		TweenService:Create(applyStroke, TweenInfo.new(0.15), {Transparency = 0.3, Thickness = 1}):Play()
+	end)
+	applyBtn.MouseButton1Down:Connect(function()
+		TweenService:Create(applyScale, TweenInfo.new(0.08), {Scale = 0.9}):Play()
+	end)
+	applyBtn.MouseButton1Up:Connect(function()
+		TweenService:Create(applyScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	end)
+
+	applyBtn.MouseButton1Click:Connect(function()
+		local valStr = inputBox.Text
+		if valStr == "" then
+			valStr = inputBox.PlaceholderText
+		end
+		local num = tonumber(valStr)
+		if not num then
+			notify("Invalid number for " .. props.label, "error")
+			return
+		end
+		local ok, err = pcall(function() props.setter(num) end)
+		if ok then
+			notify(props.label .. " = " .. tostring(num), "success")
+			addLog("REDPL: " .. props.label .. " set to " .. tostring(num), "success")
+		else
+			notify("Failed: " .. tostring(err), "error")
+		end
+	end)
+
+	-- live update текущего значения каждые 0.5 сек
+	task.spawn(function()
+		while liveValue and liveValue.Parent do
+			local ok, val = pcall(props.getter)
+			if ok and val ~= nil then
+				liveValue.Text = tostring(math.floor(val * 10 + 0.5) / 10)
+			else
+				liveValue.Text = "n/a"
+			end
+			task.wait(0.5)
+		end
+	end)
+end
+
+-- ===== строки-характеристики =====
+makeStatRow({
+	label = "Walk Speed",
+	default = 16,
+	layoutOrder = 1,
+	getter = function() local h = getHumanoid(); return h and h.WalkSpeed end,
+	setter = function(v) local h = getHumanoid(); if h then h.WalkSpeed = v end end,
+})
+makeStatRow({
+	label = "Jump Power",
+	default = 50,
+	layoutOrder = 2,
+	getter = function() local h = getHumanoid(); return h and h.JumpPower end,
+	setter = function(v) local h = getHumanoid(); if h then h.JumpPower = v end end,
+})
+makeStatRow({
+	label = "Hip Height",
+	default = 2,
+	layoutOrder = 3,
+	getter = function() local h = getHumanoid(); return h and h.HipHeight end,
+	setter = function(v) local h = getHumanoid(); if h then h.HipHeight = v end end,
+})
+makeStatRow({
+	label = "Health",
+	default = 100,
+	layoutOrder = 4,
+	getter = function() local h = getHumanoid(); return h and h.Health end,
+	setter = function(v) local h = getHumanoid(); if h then h.Health = v end end,
+})
+makeStatRow({
+	label = "Max Health",
+	default = 100,
+	layoutOrder = 5,
+	getter = function() local h = getHumanoid(); return h and h.MaxHealth end,
+	setter = function(v) local h = getHumanoid(); if h then h.MaxHealth = v; h.Health = v end end,
+})
+makeStatRow({
+	label = "Gravity",
+	default = 196,
+	layoutOrder = 6,
+	getter = function() return workspace.Gravity end,
+	setter = function(v) workspace.Gravity = v end,
+})
+makeStatRow({
+	label = "Field of View",
+	default = 70,
+	layoutOrder = 7,
+	getter = function() return workspace.CurrentCamera and workspace.CurrentCamera.FieldOfView end,
+	setter = function(v) if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = v end end,
+})
+
+-- RESET-кнопка восстанавливает все дефолтные значения
+local resetRow = Instance.new("Frame", pages.RedPl)
+resetRow.Size = UDim2.new(0.94, 0, 0, 36)
+resetRow.BackgroundTransparency = 1
+resetRow.LayoutOrder = 100
+
+local resetBtn = Instance.new("TextButton", resetRow)
+resetBtn.Size = UDim2.new(1, 0, 1, 0)
+resetBtn.BackgroundColor3 = Color3.fromRGB(110, 25, 25)
+resetBtn.Text = "RESET ALL TO DEFAULT"
+resetBtn.TextColor3 = Color3.fromRGB(255, 230, 230)
+resetBtn.Font = Enum.Font.GothamBold
+resetBtn.TextSize = 11
+resetBtn.AutoButtonColor = false
+resetBtn.BorderSizePixel = 0
+round(resetBtn, 6)
+local resetGrad = Instance.new("UIGradient", resetBtn)
+resetGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 50, 50)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 15, 15))
+})
+resetGrad.Rotation = 90
+local resetStroke = Instance.new("UIStroke", resetBtn)
+resetStroke.Color = Color3.fromRGB(255, 110, 110)
+resetStroke.Thickness = 1.2
+resetStroke.Transparency = 0.2
+local resetScale = Instance.new("UIScale", resetBtn)
+resetBtn.MouseButton1Down:Connect(function()
+	TweenService:Create(resetScale, TweenInfo.new(0.08), {Scale = 0.96}):Play()
+end)
+resetBtn.MouseButton1Up:Connect(function()
+	TweenService:Create(resetScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+end)
+resetBtn.MouseButton1Click:Connect(function()
+	pcall(function()
+		local h = getHumanoid()
+		if h then
+			h.WalkSpeed = 16
+			h.JumpPower = 50
+			h.HipHeight = 2
+			h.MaxHealth = 100
+			h.Health = 100
+		end
+		workspace.Gravity = 196
+		if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = 70 end
+	end)
+	notify("Reset to default values", "info")
+	addLog("REDPL: all stats reset to default", "info")
+end)
+
+pages.RedPl.CanvasSize = UDim2.new(0, 0, 0, 8 * 48 + 50)
+pages.RedPl.ScrollBarThickness = 3
+pages.RedPl.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60)
+
+-- ===== TOGGLE KR BUTTON (premium glossy circle) =====
+-- внешний glow halo (живёт за самой кнопкой)
+local toggleHalo = Instance.new("ImageLabel", sg)
+toggleHalo.Size = UDim2.new(0, 90, 0, 90)
+toggleHalo.Position = UDim2.new(0, -5, 1, -90)
+toggleHalo.BackgroundTransparency = 1
+toggleHalo.Image = "rbxassetid://5028857084"
+toggleHalo.ImageColor3 = Color3.fromRGB(255, 50, 50)
+toggleHalo.ImageTransparency = 0.55
+toggleHalo.ZIndex = 10
+
+-- сама кнопка
 local toggleBtn = Instance.new("TextButton", sg)
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-toggleBtn.Position = UDim2.new(0, 15, 1, -70)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-toggleBtn.Text = "KR"
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 14
-round(toggleBtn, 25)
+toggleBtn.Size = UDim2.new(0, 56, 0, 56)
+toggleBtn.Position = UDim2.new(0, 12, 1, -73)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 20, 20)
+toggleBtn.Text = ""
+toggleBtn.AutoButtonColor = false
+toggleBtn.BorderSizePixel = 0
+toggleBtn.ZIndex = 11
+round(toggleBtn, 28)
 
-local toggleStroke = Instance.new("UIStroke", toggleBtn)
-toggleStroke.Color = Color3.fromRGB(255, 50, 50)
-toggleStroke.Thickness = 2
-toggleStroke.Transparency = 0.4
+-- основной градиент (тёмно-красный снизу к ярко-красному сверху)
+local togGrad = Instance.new("UIGradient", toggleBtn)
+togGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 30, 30)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0))
+})
+togGrad.Rotation = 90
 
+-- двойная обводка для глубины
+local togStroke = Instance.new("UIStroke", toggleBtn)
+togStroke.Color = Color3.fromRGB(255, 100, 100)
+togStroke.Thickness = 2
+togStroke.Transparency = 0.2
+
+-- inner glossy блик (полукруг сверху как у iOS-кнопок)
+local gloss = Instance.new("Frame", toggleBtn)
+gloss.Size = UDim2.new(0.85, 0, 0.45, 0)
+gloss.Position = UDim2.new(0.075, 0, 0.05, 0)
+gloss.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+gloss.BackgroundTransparency = 0.7
+gloss.BorderSizePixel = 0
+gloss.ZIndex = 12
+round(gloss, 20)
+local glossGrad = Instance.new("UIGradient", gloss)
+glossGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.4),
+	NumberSequenceKeypoint.new(1, 1)
+})
+glossGrad.Rotation = 90
+
+-- внутренняя обводка (даёт "вдавленный" вид)
+local innerRing = Instance.new("Frame", toggleBtn)
+innerRing.Size = UDim2.new(1, -10, 1, -10)
+innerRing.Position = UDim2.new(0, 5, 0, 5)
+innerRing.BackgroundTransparency = 1
+innerRing.ZIndex = 12
+round(innerRing, 23)
+local innerStroke = Instance.new("UIStroke", innerRing)
+innerStroke.Color = Color3.fromRGB(80, 0, 0)
+innerStroke.Thickness = 1
+innerStroke.Transparency = 0.5
+
+-- текст "KR" с тенью
+local krShadow = Instance.new("TextLabel", toggleBtn)
+krShadow.Size = UDim2.new(1, 0, 1, 0)
+krShadow.Position = UDim2.new(0, 1, 0, 2)
+krShadow.BackgroundTransparency = 1
+krShadow.Text = "KR"
+krShadow.TextColor3 = Color3.fromRGB(50, 0, 0)
+krShadow.TextTransparency = 0.4
+krShadow.Font = Enum.Font.GothamBold
+krShadow.TextSize = 18
+krShadow.ZIndex = 13
+
+local krText = Instance.new("TextLabel", toggleBtn)
+krText.Size = UDim2.new(1, 0, 1, 0)
+krText.BackgroundTransparency = 1
+krText.Text = "KR"
+krText.TextColor3 = Color3.fromRGB(255, 240, 240)
+krText.Font = Enum.Font.GothamBold
+krText.TextSize = 18
+krText.ZIndex = 14
+local krTextStroke = Instance.new("UIStroke", krText)
+krTextStroke.Color = Color3.fromRGB(120, 0, 0)
+krTextStroke.Thickness = 1
+krTextStroke.Transparency = 0.3
+
+-- pulse анимация halo + stroke
 task.spawn(function()
 	while toggleBtn and toggleBtn.Parent do
-		TweenService:Create(toggleStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.8}):Play()
+		TweenService:Create(togStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.6}):Play()
+		TweenService:Create(toggleHalo, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.75, Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0, -10, 1, -95)}):Play()
 		task.wait(1.5)
-		TweenService:Create(toggleStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.2}):Play()
+		TweenService:Create(togStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {Transparency = 0.15}):Play()
+		TweenService:Create(toggleHalo, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {ImageTransparency = 0.5, Size = UDim2.new(0, 88, 0, 88), Position = UDim2.new(0, -4, 1, -89)}):Play()
 		task.wait(1.5)
 	end
 end)
 
-addButtonEffects(toggleBtn, Color3.fromRGB(150, 0, 0), Color3.fromRGB(200, 30, 30))
+-- hover/click эффекты
+local togScale = Instance.new("UIScale", toggleBtn)
+toggleBtn.MouseEnter:Connect(function()
+	TweenService:Create(togScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1.08}):Play()
+	TweenService:Create(toggleHalo, TweenInfo.new(0.2), {ImageTransparency = 0.3}):Play()
+end)
+toggleBtn.MouseLeave:Connect(function()
+	TweenService:Create(togScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Scale = 1}):Play()
+end)
+toggleBtn.MouseButton1Down:Connect(function()
+	TweenService:Create(togScale, TweenInfo.new(0.08), {Scale = 0.92}):Play()
+end)
+toggleBtn.MouseButton1Up:Connect(function()
+	TweenService:Create(togScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1.05}):Play()
+end)
 
 Instance.new("UIScale", mainFrame)
 
@@ -1491,17 +3000,22 @@ persistBtn.MouseButton1Click:Connect(function()
 end)
 
 task.spawn(function()
-	addLog("KR_BACKDOOR V10.0 loading...", "system")
+	addLog("KR_BACKDOOR V10.12 loading...", "system")
 
-	TweenService:Create(loadBarFill, TweenInfo.new(1), {Size = UDim2.new(0.4, 0, 1, 0)}):Play()
-	wait(1)
+	statusLabel.Text = "Initializing interface..."
+	TweenService:Create(loadBarFill, TweenInfo.new(0.6), {Size = UDim2.new(0.25, 0, 1, 0)}):Play()
+	wait(0.6)
+	statusLabel.Text = "Loading script library..."
+	TweenService:Create(loadBarFill, TweenInfo.new(0.5), {Size = UDim2.new(0.45, 0, 1, 0)}):Play()
+	wait(0.5)
 	statusLabel.Text = "Scanning remotes..."
-	TweenService:Create(loadBarFill, TweenInfo.new(0.8), {Size = UDim2.new(0.7, 0, 1, 0)}):Play()
+	TweenService:Create(loadBarFill, TweenInfo.new(0.5), {Size = UDim2.new(0.7, 0, 1, 0)}):Play()
 
 	backdoor = findBackdoor()
 
-	wait(0.8)
-	TweenService:Create(loadBarFill, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+	wait(0.5)
+	statusLabel.Text = "Hooking..."
+	TweenService:Create(loadBarFill, TweenInfo.new(0.4), {Size = UDim2.new(1, 0, 1, 0)}):Play()
 
 	updateStatus()
 	if backdoor then
@@ -1514,15 +3028,34 @@ task.spawn(function()
 		addLog("No backdoor found - Offline Mode", "warn")
 	end
 
-	statusLabel.Text = backdoor and "System Synced" or "Offline Mode"
+	statusLabel.Text = backdoor and "System synced" or "Offline mode"
 	wait(0.5)
-	statusLabel.Text = "Created by Krsp Team"
+	statusLabel.Text = "Ready"
 	scanRemotes()
 	refreshPlayers()
 	wait(1)
+
+	-- красивый fade-out всех элементов лоадера
+	TweenService:Create(loader, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(loaderStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
+	TweenService:Create(loaderBackdrop, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(loaderHalo, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
+	TweenService:Create(spinnerCore, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
+	TweenService:Create(spinnerStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
+	TweenService:Create(lTitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	TweenService:Create(titleStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
+	TweenService:Create(subtitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	TweenService:Create(statusLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	TweenService:Create(versionBadge, TweenInfo.new(0.5), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+	TweenService:Create(loadBarBg, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(loadBarFill, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	wait(0.55)
 	loader:Destroy()
+	if loaderBackdrop then loaderBackdrop:Destroy() end
+	if loaderHalo then loaderHalo:Destroy() end
+
 	visible = true
 	showMain()
-	notify("KR_BACKDOOR V10.0 loaded", "info")
+	notify("KR_BACKDOOR V10.12 loaded", "info")
 	addLog("Interface ready", "success")
 end)
